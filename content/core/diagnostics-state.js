@@ -1,0 +1,207 @@
+(() => {
+  const app = globalThis.__CSP__;
+  const config = app.core.config;
+
+  function createModeCatalogSnapshot() {
+    if (app.modes && typeof app.modes.getDiagnosticsCatalog === "function") {
+      return app.modes.getDiagnosticsCatalog();
+    }
+
+    return {
+      modes: [],
+      availableLevels: [config.defaultLevel],
+      plannedLevels: [],
+    };
+  }
+
+  function createDiagnosticsState() {
+    const modeCatalog = createModeCatalogSnapshot();
+
+    return {
+      level: config.defaultLevel,
+      targetMode: config.defaultLevel,
+      effectiveMode: config.defaultLevel,
+      runtimeStatus: "disabled",
+      availableLevels: [...modeCatalog.availableLevels],
+      plannedLevels: [...modeCatalog.plannedLevels],
+      modes: modeCatalog.modes.map((mode) => ({
+        ...mode,
+      })),
+      page: {
+        isChatPage: false,
+        threadReady: false,
+        scrollRootReady: false,
+        path: globalThis.location.pathname,
+        optimizationEnabled: false,
+        runtimeProfile: "balanced",
+        deviceTier: "normal",
+        activeAdapter: "",
+        recognitionConfidence: "none",
+        lastSyncReason: "startup",
+      },
+      capabilities: {
+        contentVisibility: false,
+        containIntrinsicSize: false,
+      },
+      metrics: {
+        messageTotal: 0,
+        unitTotal: 0,
+        discovered: 0,
+        registered: 0,
+        observed: 0,
+        optimizable: 0,
+        optimized: 0,
+        keepAlive: 0,
+        protected: 0,
+        visible: 0,
+        nearViewport: 0,
+        pendingMeasurements: 0,
+        recognitionFailures: 0,
+        skippedMessages: 0,
+        coverageRate: 0,
+        protectedShare: 0,
+        estimatedSkippedHeight: 0,
+        estimatedControlledNodes: 0,
+        benefitLevel: "low",
+        collapsedCount: 0,
+        collapseQueueSize: 0,
+        restoreQueueSize: 0,
+        stateTransitionCount: 0,
+        selfMutationSuppressedCount: 0,
+        anchorCorrectionCount: 0,
+        anchorCorrectionFailureCount: 0,
+        sessionCollapseBlockedCount: 0,
+        localFreezeZoneCount: 0,
+        benefitRejectedCount: 0,
+        structureRescanCount: 0,
+        consecutiveSlowSyncCount: 0,
+        nativeSearchDegradeNoticeCount: 0,
+        performanceFarCount: 0,
+        performanceBenefitEligibleCount: 0,
+        performanceCollapsePendingCount: 0,
+        performanceCollapsedStableCount: 0,
+        performanceBlockedByBenefitCount: 0,
+        performanceBlockedByWriteWindowCount: 0,
+        performanceBlockedByBudgetCount: 0,
+        performanceBlockedByDwellCount: 0,
+        performanceExpandedByProtectionCount: 0,
+        initDurationMs: 0,
+        lastSyncDurationMs: 0,
+        avgSyncDurationMs: 0,
+        lastResyncDurationMs: 0,
+        resyncCount: 0,
+      },
+      fallback: {
+        enabled: false,
+        reason: "",
+        lastError: "",
+      },
+      activity: {
+        busy: false,
+        phase: "idle",
+        reason: "",
+        lowPriority: false,
+      },
+      session: {
+        activeAnomalyReason: "",
+        anomalyCount: 0,
+        lastAnomalyReason: "",
+        lastAnomalyAt: 0,
+        degradeCount: 0,
+        lastDegradeReason: "",
+        lastDegradeMode: "",
+        lastDegradeAt: 0,
+        recoveryCount: 0,
+        lastRecoveryReason: "",
+        lastRecoveryMode: "",
+        lastRecoveryAt: 0,
+        lockedDegradation: false,
+        lockedReason: "",
+      },
+      trace: app.runtime.createTraceDiagnosticsState
+        ? app.runtime.createTraceDiagnosticsState()
+        : {
+            recording: false,
+            entryCount: 0,
+            domEventCount: 0,
+            mutationBatchCount: 0,
+            snapshotCount: 0,
+            syncEventCount: 0,
+            styleWriteCount: 0,
+            startedAt: 0,
+            lastUpdatedAt: 0,
+            lastKind: "",
+            lastType: "",
+          },
+      events: [],
+    };
+  }
+
+  function cloneModeState(state) {
+    return {
+      level: state.level,
+      targetMode: state.targetMode,
+      effectiveMode: state.effectiveMode,
+      availableLevels: [...state.availableLevels],
+      plannedLevels: [...state.plannedLevels],
+      modes: state.modes.map((mode) => ({
+        ...mode,
+      })),
+    };
+  }
+
+  function cloneEvents(state) {
+    return state.events.map((event) => ({
+      ...event,
+      detailParams: {
+        ...(event.detailParams || {}),
+      },
+    }));
+  }
+
+  function cloneDiagnosticsSlice(state, sliceName) {
+    switch (sliceName) {
+      case "modeState":
+        return cloneModeState(state);
+      case "runtimeStatus":
+        return state.runtimeStatus;
+      case "page":
+        return {
+          ...state.page,
+        };
+      case "capabilities":
+        return {
+          ...state.capabilities,
+        };
+      case "metrics":
+        return {
+          ...state.metrics,
+        };
+      case "fallback":
+        return {
+          ...state.fallback,
+        };
+      case "activity":
+        return {
+          ...state.activity,
+        };
+      case "session":
+        return {
+          ...state.session,
+        };
+      case "trace":
+        return {
+          ...state.trace,
+        };
+      case "events":
+        return cloneEvents(state);
+      default:
+        return undefined;
+    }
+  }
+
+  app.core.diagnosticsState = Object.freeze({
+    createDiagnosticsState,
+    cloneDiagnosticsSlice,
+  });
+})();

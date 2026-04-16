@@ -1,0 +1,98 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_appName__",
+  "description": "__MSG_appDesc__",
+  "default_locale": "en_US",
+  "version": "1.0.0",
+  "homepage_url": "https://github.com/chengzi365/ChatGPT-Stabilizer-Pro",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "chatgpt-stabilizer-pro@chengzi365"
+    }
+  },
+  "permissions": [
+    "storage"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "content/bootstrap/namespace.js",
+        "content/core/i18n.js",
+        "content/core/runtime-formatters.js",
+        "content/core/config.js",
+        "content/core/logger.js",
+        "content/core/storage.js",
+        "content/core/utils.js",
+        "content/core/capabilities.js",
+        "content/core/diagnostics-state.js",
+        "content/core/diagnostics-snapshot.js",
+        "content/core/diagnostics-store.js",
+        "content/modes/index.js",
+        "content/modes/standard.js",
+        "content/modes/performance/runtime.js",
+        "content/modes/performance/workset.js",
+        "content/modes/performance/decision.js",
+        "content/modes/performance/session.js",
+        "content/modes/performance.js",
+        "content/modes/extreme.js",
+        "content/dom/selectors.js",
+        "content/dom/discovery-cache.js",
+        "content/dom/page-recognition.js",
+        "content/dom/message-identity.js",
+        "content/dom/message-collection.js",
+        "content/dom/discovery.js",
+        "content/dom/page-state.js",
+        "content/dom/page-adapter.js",
+        "content/dom/registry.js",
+        "content/dom/route.js",
+        "content/dom/interaction.js",
+        "content/dom/observers.js",
+        "content/dom/visibility.js",
+        "content/dom/layout-cache.js",
+        "content/dom/content-profile.js",
+        "content/dom/layout-watchers.js",
+        "content/dom/measurement.js",
+        "content/runtime/runtime-profile.js",
+        "content/runtime/session-state.js",
+        "content/runtime/services.js",
+        "content/runtime/common-engine.js",
+        "content/runtime/mode-runner.js",
+        "content/runtime/metrics.js",
+        "content/runtime/degrade.js",
+        "content/runtime/recovery.js",
+        "content/runtime/protection.js",
+        "content/runtime/sync-scheduler.js",
+        "content/runtime/sync-pipeline.js",
+        "content/runtime/trace-state.js",
+        "content/runtime/trace-snapshot.js",
+        "content/runtime/trace-export.js",
+        "content/runtime/trace-controller.js",
+        "content/runtime/trace-recorder.js",
+        "content/ui/panel-layout.js",
+        "content/ui/panel-render.js",
+        "content/ui/panel-subscriptions.js",
+        "content/ui/panel-overlay.js",
+        "content/ui/panel-sections.js",
+        "content/ui/panel-controller.js",
+        "content/style/base-style.js",
+        "content/style/mode-style.js",
+        "content/runtime/controller.js",
+        "content/bootstrap/app.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

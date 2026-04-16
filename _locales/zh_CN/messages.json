@@ -1,0 +1,794 @@
+{
+  "meta_appName": {
+    "message": "ChatGPT Stabilizer Pro"
+  },
+  "meta_shortName": {
+    "message": "CSP"
+  },
+  "common_yes": {
+    "message": "是"
+  },
+  "common_no": {
+    "message": "否"
+  },
+  "common_enabled": {
+    "message": "已启用"
+  },
+  "common_disabled": {
+    "message": "未启用"
+  },
+  "common_ready": {
+    "message": "已就绪"
+  },
+  "common_missing": {
+    "message": "缺失"
+  },
+  "common_none": {
+    "message": "-"
+  },
+  "common_locked": {
+    "message": "已锁定"
+  },
+  "common_unlocked": {
+    "message": "未锁定"
+  },
+  "units_durationMs": {
+    "message": "{value} 毫秒"
+  },
+  "units_pixels": {
+    "message": "{value} 像素"
+  },
+  "runtimeStatus_disabled": {
+    "message": "未启用"
+  },
+  "runtimeStatus_active": {
+    "message": "运行中"
+  },
+  "runtimeStatus_fallback": {
+    "message": "降级运行"
+  },
+  "runtimeStatus_degraded": {
+    "message": "异常降级"
+  },
+  "runtimeStatus_error": {
+    "message": "错误"
+  },
+  "eventTypes_startup": {
+    "message": "启动"
+  },
+  "eventTypes_panel": {
+    "message": "面板"
+  },
+  "eventTypes_level": {
+    "message": "等级"
+  },
+  "eventTypes_resync": {
+    "message": "重同步"
+  },
+  "eventTypes_restore": {
+    "message": "恢复"
+  },
+  "eventTypes_sync": {
+    "message": "同步"
+  },
+  "eventTypes_search": {
+    "message": "搜索"
+  },
+  "eventTypes_error": {
+    "message": "错误"
+  },
+  "syncReasons_startup": {
+    "message": "启动"
+  },
+  "syncReasons_route_change": {
+    "message": "路由变化"
+  },
+  "syncReasons_manual_resync": {
+    "message": "手动重同步"
+  },
+  "syncReasons_manual_restore": {
+    "message": "当前会话恢复"
+  },
+  "syncReasons_level_change": {
+    "message": "等级切换"
+  },
+  "syncReasons_runtime_profile_change": {
+    "message": "运行档位变化"
+  },
+  "syncReasons_dom_mutation": {
+    "message": "DOM 变更"
+  },
+  "syncReasons_dom_structure": {
+    "message": "结构变更"
+  },
+  "syncReasons_dom_content": {
+    "message": "内容更新"
+  },
+  "syncReasons_visibility_change": {
+    "message": "可见性变化"
+  },
+  "syncReasons_measurement_backlog": {
+    "message": "测量补齐"
+  },
+  "syncReasons_idle": {
+    "message": "空闲"
+  },
+  "fallbackReasons_css_capability": {
+    "message": "CSS 能力不足，已降级"
+  },
+  "fallbackReasons_recognition_failures": {
+    "message": "消息识别失败过多"
+  },
+  "fallbackReasons_runtime_error": {
+    "message": "运行时错误，已进入降级"
+  },
+  "fallbackReasons_manual_restore": {
+    "message": "当前会话已手动恢复并降回安全模式"
+  },
+  "sessionReasons_css_capability": {
+    "message": "CSS 能力不足，已降级"
+  },
+  "sessionReasons_recognition_failures": {
+    "message": "消息识别失败过多"
+  },
+  "sessionReasons_runtime_error": {
+    "message": "运行时错误，已进入降级"
+  },
+  "sessionReasons_manual_restore": {
+    "message": "当前会话已手动恢复并降回安全模式"
+  },
+  "sessionReasons_stability": {
+    "message": "会话已恢复稳定"
+  },
+  "benefitLevels_low": {
+    "message": "低"
+  },
+  "benefitLevels_medium": {
+    "message": "中"
+  },
+  "benefitLevels_high": {
+    "message": "高"
+  },
+  "riskTags_none": {
+    "message": "无风险"
+  },
+  "riskTags_very_low": {
+    "message": "极低风险"
+  },
+  "riskTags_low": {
+    "message": "低风险"
+  },
+  "riskTags_medium": {
+    "message": "中风险"
+  },
+  "riskTags_high": {
+    "message": "高风险"
+  },
+  "levels_off_label": {
+    "message": "Off"
+  },
+  "levels_off_description": {
+    "message": "不启用任何内容接管或优化写入，只保留状态统计和面板能力。"
+  },
+  "levels_off_risk": {
+    "message": "不影响任何原生功能。"
+  },
+  "levels_monitor_label": {
+    "message": "Monitor"
+  },
+  "levels_monitor_description": {
+    "message": "启用识别、统计、诊断与追踪链路，但不对消息内容执行优化接管。"
+  },
+  "levels_monitor_risk": {
+    "message": "不影响任何原生功能。"
+  },
+  "levels_standard_label": {
+    "message": "Standard"
+  },
+  "levels_standard_description": {
+    "message": "标准接管方案，对中等规模离屏内容做增量优化，降低长对话中的渲染和滚动负担。"
+  },
+  "levels_standard_risk": {
+    "message": "较保守的优化方案，几乎不影响任何原生功能"
+  },
+  "levels_performance_label": {
+    "message": "Performance"
+  },
+  "levels_performance_description": {
+    "message": "更加有效的优化策略，将远处的内容原位折叠压缩，接近窗口时再分批恢复。"
+  },
+  "levels_performance_risk": {
+    "message": "查看折叠消息会有瞬间的恢复过程，有概率影响原生功能"
+  },
+  "levels_extreme_label": {
+    "message": "Extreme"
+  },
+  "levels_extreme_description": {
+    "message": "比 Performance 更激进的优化策略，更强的优化效果，下个版本将会推出，敬请期待。"
+  },
+  "levels_extreme_risk": {
+    "message": "当前不可选"
+  },
+  "panel_badgeTitle": {
+    "message": "CSP"
+  },
+  "panel_badgeWaiting": {
+    "message": "等待数据..."
+  },
+  "panel_title": {
+    "message": "ChatGPT Stabilizer Pro"
+  },
+  "panel_subtitle": {
+    "message": "控制面板、运行状态与诊断信息。"
+  },
+  "panel_overlay_loadingTitle": {
+    "message": "页面加载中"
+  },
+  "panel_overlay_loadingBody": {
+    "message": "正在识别当前会话结构并准备面板数据，请稍候。"
+  },
+  "panel_overlay_optimizingTitle": {
+    "message": "正在优化中"
+  },
+  "panel_overlay_optimizingBody": {
+    "message": "正在分批测量、折叠和恢复历史内容，处理完成后面板会自动恢复可操作状态。"
+  },
+  "panel_overlayStage_scanPage": {
+    "message": "识别页面"
+  },
+  "panel_overlayStage_scanThread": {
+    "message": "识别会话结构"
+  },
+  "panel_overlayStage_collectMessages": {
+    "message": "收集消息索引"
+  },
+  "panel_overlayStage_prepareSync": {
+    "message": "准备首次同步"
+  },
+  "panel_overlayStage_measureContent": {
+    "message": "测量内容"
+  },
+  "panel_overlayStage_applyOptimization": {
+    "message": "应用优化"
+  },
+  "panel_overlayStage_settleState": {
+    "message": "收尾稳定"
+  },
+  "panel_badgeSummary": {
+    "message": "{messages} 条消息 | 优化内容块 {optimized} | 优化率 {coverage}"
+  },
+  "panel_eventMeta": {
+    "message": "{time} | {type}"
+  },
+  "panel_noRecentEvents": {
+    "message": "暂无最近事件。"
+  },
+  "panel_renderErrorShort": {
+    "message": "渲染失败"
+  },
+  "panel_renderErrorDetail": {
+    "message": "控制面板渲染失败：{error}。请尝试点击重同步或重新加载扩展。"
+  },
+  "panel_summaryIndicatorLabel": {
+    "message": "优化等级"
+  },
+  "panel_summaryRateLabel": {
+    "message": "优化率"
+  },
+  "panel_actions_copy": {
+    "message": "复制"
+  },
+  "panel_actions_resync": {
+    "message": "刷新"
+  },
+  "panel_actions_restoreSession": {
+    "message": "恢复当前会话"
+  },
+  "panel_actions_restoreUnavailable": {
+    "message": "当前模式不需要会话恢复"
+  },
+  "panel_actions_hide": {
+    "message": "隐藏面板"
+  },
+  "panel_actions_collapse": {
+    "message": "收起面板"
+  },
+  "panel_actions_expand": {
+    "message": "展开面板"
+  },
+  "panel_actions_show": {
+    "message": "显示面板"
+  },
+  "panel_actions_darkMode": {
+    "message": "深色模式"
+  },
+  "panel_actions_lightMode": {
+    "message": "浅色模式"
+  },
+  "panel_sections_mode": {
+    "message": "优化等级"
+  },
+  "panel_sections_runtime": {
+    "message": "运行状态"
+  },
+  "panel_sections_messages": {
+    "message": "聊天统计"
+  },
+  "panel_sections_units": {
+    "message": "内容块统计数据"
+  },
+  "panel_sections_impact": {
+    "message": "预计收益"
+  },
+  "panel_sections_performance": {
+    "message": "性能指标"
+  },
+  "panel_sections_fallback": {
+    "message": "降级与错误"
+  },
+  "panel_sections_trace": {
+    "message": "调试记录"
+  },
+  "panel_sections_events": {
+    "message": "最近事件"
+  },
+  "panel_tabs_overview": {
+    "message": "总览"
+  },
+  "panel_runtime_status": {
+    "message": "状态"
+  },
+  "panel_runtime_targetMode": {
+    "message": "目标模式"
+  },
+  "panel_runtime_effectiveMode": {
+    "message": "实际模式"
+  },
+  "panel_runtime_runtimeProfile": {
+    "message": "运行档位"
+  },
+  "panel_runtime_deviceTier": {
+    "message": "分辨率"
+  },
+  "panel_runtime_lockedDegradation": {
+    "message": "锁定降级"
+  },
+  "panel_runtime_chatPage": {
+    "message": "聊天页"
+  },
+  "panel_runtime_activeAdapter": {
+    "message": "适配器"
+  },
+  "panel_runtime_recognitionConfidence": {
+    "message": "识别置信度"
+  },
+  "panel_runtime_threadReady": {
+    "message": "线程就绪"
+  },
+  "panel_runtime_optimization": {
+    "message": "优化启用"
+  },
+  "panel_runtime_scrollRoot": {
+    "message": "滚动根"
+  },
+  "panel_runtime_lastSyncReason": {
+    "message": "最近同步原因"
+  },
+  "panel_messages_total": {
+    "message": "消息总数"
+  },
+  "panel_messages_units": {
+    "message": "总内容块"
+  },
+  "panel_messages_observed": {
+    "message": "已观测"
+  },
+  "panel_messages_optimizable": {
+    "message": "可优化"
+  },
+  "panel_messages_optimized": {
+    "message": "优化内容块"
+  },
+  "panel_messages_keepAlive": {
+    "message": "保活"
+  },
+  "panel_messages_protected": {
+    "message": "受保护"
+  },
+  "panel_messages_visible": {
+    "message": "可见"
+  },
+  "panel_messages_nearViewport": {
+    "message": "近窗口"
+  },
+  "panel_impact_coverage": {
+    "message": "优化率"
+  },
+  "panel_impact_protectedShare": {
+    "message": "保护占比"
+  },
+  "panel_impact_skippedHeight": {
+    "message": "优化高度"
+  },
+  "panel_impact_controlledNodes": {
+    "message": "受控DOM节点"
+  },
+  "panel_impact_benefit": {
+    "message": "收益等级"
+  },
+  "panel_performance_init": {
+    "message": "初始化"
+  },
+  "panel_performance_lastSync": {
+    "message": "最近同步"
+  },
+  "panel_performance_avgSync": {
+    "message": "平均同步"
+  },
+  "panel_performance_lastResync": {
+    "message": "最近重同步"
+  },
+  "panel_performance_resyncCount": {
+    "message": "重同步次数"
+  },
+  "panel_performance_collapsedCount": {
+    "message": "已折叠"
+  },
+  "panel_performance_collapseQueueSize": {
+    "message": "折叠队列"
+  },
+  "panel_performance_restoreQueueSize": {
+    "message": "恢复队列"
+  },
+  "panel_performance_stateTransitionCount": {
+    "message": "状态切换"
+  },
+  "panel_performance_selfMutationSuppressedCount": {
+    "message": "自变更抑制"
+  },
+  "panel_performance_anchorCorrectionCount": {
+    "message": "锚点修正"
+  },
+  "panel_performance_anchorCorrectionFailureCount": {
+    "message": "锚点修正失败"
+  },
+  "panel_performance_sessionCollapseBlockedCount": {
+    "message": "会话阻止折叠"
+  },
+  "panel_performance_localFreezeZoneCount": {
+    "message": "局部冻结区"
+  },
+  "panel_performance_benefitRejectedCount": {
+    "message": "收益拒绝"
+  },
+  "panel_performance_performanceFarCount": {
+    "message": "远距记录"
+  },
+  "panel_performance_performanceBenefitEligibleCount": {
+    "message": "可折叠远距记录"
+  },
+  "panel_performance_performanceCollapsePendingCount": {
+    "message": "待折叠"
+  },
+  "panel_performance_performanceCollapsedStableCount": {
+    "message": "稳定折叠"
+  },
+  "panel_performance_performanceBlockedByBenefitCount": {
+    "message": "收益不足阻塞"
+  },
+  "panel_performance_performanceBlockedByWriteWindowCount": {
+    "message": "写入窗口阻塞"
+  },
+  "panel_performance_performanceBlockedByBudgetCount": {
+    "message": "预算阻塞"
+  },
+  "panel_performance_performanceBlockedByDwellCount": {
+    "message": "驻留时间阻塞"
+  },
+  "panel_performance_performanceExpandedByProtectionCount": {
+    "message": "保护区展开"
+  },
+  "panel_performance_structureRescanCount": {
+    "message": "结构重扫次数"
+  },
+  "panel_performance_consecutiveSlowSyncCount": {
+    "message": "连续慢同步"
+  },
+  "panel_performance_nativeSearchDegradeNoticeCount": {
+    "message": "原生搜索提示次数"
+  },
+  "panel_fallback_contentVisibility": {
+    "message": "离屏渲染优化"
+  },
+  "panel_fallback_containIntrinsicSize": {
+    "message": "占位尺寸控制"
+  },
+  "panel_fallback_fallback": {
+    "message": "降级状态"
+  },
+  "panel_fallback_lastAnomaly": {
+    "message": "最近异常原因"
+  },
+  "panel_fallback_degradeCount": {
+    "message": "降级次数"
+  },
+  "panel_fallback_recoveryCount": {
+    "message": "恢复次数"
+  },
+  "panel_fallback_recognitionFailures": {
+    "message": "识别失败"
+  },
+  "panel_fallback_skippedMessages": {
+    "message": "跳过消息"
+  },
+  "panel_fallback_lastError": {
+    "message": "最近错误"
+  },
+  "panel_trace_recording": {
+    "message": "录制状态"
+  },
+  "panel_trace_entries": {
+    "message": "记录条数"
+  },
+  "panel_trace_domEvents": {
+    "message": "DOM 事件"
+  },
+  "panel_trace_mutations": {
+    "message": "变更批次"
+  },
+  "panel_trace_snapshots": {
+    "message": "快照数"
+  },
+  "panel_trace_syncSamples": {
+    "message": "同步样本"
+  },
+  "panel_trace_styleWrites": {
+    "message": "样式写入"
+  },
+  "panel_trace_startedAt": {
+    "message": "开始时间"
+  },
+  "panel_trace_lastEntry": {
+    "message": "最后记录"
+  },
+  "panel_trace_recorded": {
+    "message": "已记录"
+  },
+  "panel_trace_start": {
+    "message": "开始调试"
+  },
+  "panel_trace_stop": {
+    "message": "停止调试"
+  },
+  "panel_trace_export": {
+    "message": "导出 JSON"
+  },
+  "panel_trace_copy": {
+    "message": "复制 JSON"
+  },
+  "panel_trace_clear": {
+    "message": "清空调试"
+  },
+  "panel_runtimeProfile_compact": {
+    "message": "紧凑"
+  },
+  "panel_runtimeProfile_balanced": {
+    "message": "均衡"
+  },
+  "panel_runtimeProfile_wide": {
+    "message": "宽窗口"
+  },
+  "panel_deviceTier_low": {
+    "message": "低"
+  },
+  "panel_deviceTier_normal": {
+    "message": "中"
+  },
+  "panel_deviceTier_high": {
+    "message": "高"
+  },
+  "panel_recognitionConfidence_none": {
+    "message": "无"
+  },
+  "panel_recognitionConfidence_low": {
+    "message": "低"
+  },
+  "panel_recognitionConfidence_medium": {
+    "message": "中"
+  },
+  "panel_recognitionConfidence_high": {
+    "message": "高"
+  },
+  "panel_runtimeAdapter_chatgpt_primary": {
+    "message": "主适配器"
+  },
+  "panel_runtimeAdapter_chatgpt_article_fallback": {
+    "message": "文章回退适配器"
+  },
+  "panel_traceKind_trace": {
+    "message": "追踪"
+  },
+  "panel_traceKind_dom_event": {
+    "message": "DOM 事件"
+  },
+  "panel_traceKind_sync": {
+    "message": "同步"
+  },
+  "panel_traceKind_style": {
+    "message": "样式"
+  },
+  "panel_traceKind_observer": {
+    "message": "观察器"
+  },
+  "panel_traceKind_mutation": {
+    "message": "变更"
+  },
+  "panel_traceType_start": {
+    "message": "开始"
+  },
+  "panel_traceType_end": {
+    "message": "结束"
+  },
+  "panel_traceType_batch": {
+    "message": "批次"
+  },
+  "panel_traceType_toggle": {
+    "message": "切换"
+  },
+  "panel_traceType_clear": {
+    "message": "清空"
+  },
+  "panel_traceType_export": {
+    "message": "导出"
+  },
+  "panel_traceType_copy": {
+    "message": "复制"
+  },
+  "snapshot_header": {
+    "message": "{appName} {version}"
+  },
+  "snapshot_time": {
+    "message": "时间：{value}"
+  },
+  "snapshot_status": {
+    "message": "状态：{value}"
+  },
+  "snapshot_level": {
+    "message": "等级：{value}"
+  },
+  "snapshot_targetMode": {
+    "message": "目标模式：{value}"
+  },
+  "snapshot_effectiveMode": {
+    "message": "实际模式：{value}"
+  },
+  "snapshot_page": {
+    "message": "页面：{pageType}（{path}）"
+  },
+  "snapshot_pageChat": {
+    "message": "聊天页"
+  },
+  "snapshot_pageNonChat": {
+    "message": "非聊天页"
+  },
+  "snapshot_optimization": {
+    "message": "优化启用：{value}"
+  },
+  "snapshot_contentVisibility": {
+    "message": "离屏渲染优化：{value}"
+  },
+  "snapshot_containIntrinsicSize": {
+    "message": "占位尺寸控制：{value}"
+  },
+  "snapshot_messages": {
+    "message": "消息总数：{value}"
+  },
+  "snapshot_units": {
+    "message": "总内容块：{value}"
+  },
+  "snapshot_optimized": {
+    "message": "优化内容块：{value}"
+  },
+  "snapshot_coverage": {
+    "message": "优化率：{value}"
+  },
+  "snapshot_skippedHeight": {
+    "message": "优化高度：{value}"
+  },
+  "snapshot_controlledNodes": {
+    "message": "预计受控节点：{value}"
+  },
+  "snapshot_init": {
+    "message": "初始化：{value}"
+  },
+  "snapshot_lastSync": {
+    "message": "最近同步：{value}"
+  },
+  "snapshot_avgSync": {
+    "message": "平均同步：{value}"
+  },
+  "snapshot_lastResync": {
+    "message": "最近重同步：{value}"
+  },
+  "snapshot_resyncCount": {
+    "message": "重同步次数：{value}"
+  },
+  "snapshot_fallback": {
+    "message": "降级状态：{value}"
+  },
+  "snapshot_lastAnomaly": {
+    "message": "最近异常原因：{value}"
+  },
+  "snapshot_degradeCount": {
+    "message": "降级次数：{value}"
+  },
+  "snapshot_recoveryCount": {
+    "message": "恢复次数：{value}"
+  },
+  "snapshot_lockedDegradation": {
+    "message": "锁定降级：{value}"
+  },
+  "snapshot_lastError": {
+    "message": "最近错误：{value}"
+  },
+  "events_controllerInitialized": {
+    "message": "控制器初始化完成。"
+  },
+  "events_copyDiagnosticsSuccess": {
+    "message": "已复制诊断快照。"
+  },
+  "events_copyDiagnosticsFailure": {
+    "message": "复制诊断快照失败。"
+  },
+  "events_levelUnavailable": {
+    "message": "{level} 在当前构建中不可用。"
+  },
+  "events_levelChanged": {
+    "message": "优化等级已从 {previous} 切换为 {next}。"
+  },
+  "events_manualResyncRequested": {
+    "message": "已请求手动重同步：{reason}。"
+  },
+  "events_sessionRestoreRequested": {
+    "message": "已请求当前会话恢复：{reason}。"
+  },
+  "events_sessionRestoreComplete": {
+    "message": "当前会话恢复完成：{reason}。"
+  },
+  "events_sessionRestoreUnavailable": {
+    "message": "{mode} 当前不支持会话恢复。"
+  },
+  "events_resyncComplete": {
+    "message": "重同步完成：{reason}。"
+  },
+  "events_syncComplete": {
+    "message": "同步完成：{reason}。"
+  },
+  "events_nativeSearchDegraded": {
+    "message": "当前会话存在已折叠历史。浏览器原生页内搜索可能搜不到这部分内容，必要时请先点击“恢复当前会话”。"
+  },
+  "events_runtimeError": {
+    "message": "运行时错误：{message}。"
+  },
+  "logs_diagnosticsListenerFailed": {
+    "message": "诊断监听器执行失败。"
+  },
+  "logs_syncFailed": {
+    "message": "同步失败。"
+  },
+  "logs_panelRenderFailed": {
+    "message": "控制面板渲染失败。"
+  },
+  "appName": {
+    "message": "ChatGPT Stabilizer Pro"
+  },
+  "appDesc": {
+    "message": "通过离屏渲染优化、远端对话折叠等优化方案，提升 ChatGPT 超长对话的流畅度与稳定性。"
+  },
+  "syncReasons_interaction": {
+    "message": "交互保护"
+  },
+  "syncReasons_protection_expiry": {
+    "message": "保护到期"
+  }
+}

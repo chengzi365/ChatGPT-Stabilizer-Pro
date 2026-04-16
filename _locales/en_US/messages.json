@@ -1,0 +1,794 @@
+{
+  "meta_appName": {
+    "message": "ChatGPT Stabilizer Pro"
+  },
+  "meta_shortName": {
+    "message": "CSP"
+  },
+  "common_yes": {
+    "message": "Yes"
+  },
+  "common_no": {
+    "message": "No"
+  },
+  "common_enabled": {
+    "message": "Enabled"
+  },
+  "common_disabled": {
+    "message": "Disabled"
+  },
+  "common_ready": {
+    "message": "Ready"
+  },
+  "common_missing": {
+    "message": "Missing"
+  },
+  "common_none": {
+    "message": "-"
+  },
+  "common_locked": {
+    "message": "Locked"
+  },
+  "common_unlocked": {
+    "message": "Unlocked"
+  },
+  "units_durationMs": {
+    "message": "{value} ms"
+  },
+  "units_pixels": {
+    "message": "{value} px"
+  },
+  "runtimeStatus_disabled": {
+    "message": "Disabled"
+  },
+  "runtimeStatus_active": {
+    "message": "Active"
+  },
+  "runtimeStatus_fallback": {
+    "message": "Fallback"
+  },
+  "runtimeStatus_degraded": {
+    "message": "Degraded"
+  },
+  "runtimeStatus_error": {
+    "message": "Error"
+  },
+  "eventTypes_startup": {
+    "message": "Startup"
+  },
+  "eventTypes_panel": {
+    "message": "Panel"
+  },
+  "eventTypes_level": {
+    "message": "Level"
+  },
+  "eventTypes_resync": {
+    "message": "Resync"
+  },
+  "eventTypes_restore": {
+    "message": "Restore"
+  },
+  "eventTypes_sync": {
+    "message": "Sync"
+  },
+  "eventTypes_search": {
+    "message": "Search"
+  },
+  "eventTypes_error": {
+    "message": "Error"
+  },
+  "syncReasons_startup": {
+    "message": "Startup"
+  },
+  "syncReasons_route_change": {
+    "message": "Route change"
+  },
+  "syncReasons_manual_resync": {
+    "message": "Manual resync"
+  },
+  "syncReasons_manual_restore": {
+    "message": "Current session restore"
+  },
+  "syncReasons_level_change": {
+    "message": "Level change"
+  },
+  "syncReasons_runtime_profile_change": {
+    "message": "Runtime profile change"
+  },
+  "syncReasons_dom_mutation": {
+    "message": "DOM mutation"
+  },
+  "syncReasons_dom_structure": {
+    "message": "DOM structure change"
+  },
+  "syncReasons_dom_content": {
+    "message": "Content update"
+  },
+  "syncReasons_visibility_change": {
+    "message": "Visibility change"
+  },
+  "syncReasons_measurement_backlog": {
+    "message": "Measurement catch-up"
+  },
+  "syncReasons_idle": {
+    "message": "Idle"
+  },
+  "fallbackReasons_css_capability": {
+    "message": "Insufficient CSS support; downgraded"
+  },
+  "fallbackReasons_recognition_failures": {
+    "message": "Too many message recognition failures"
+  },
+  "fallbackReasons_runtime_error": {
+    "message": "Runtime error; switched to fallback"
+  },
+  "fallbackReasons_manual_restore": {
+    "message": "Current session was restored manually and downgraded to a safer mode"
+  },
+  "sessionReasons_css_capability": {
+    "message": "Insufficient CSS support; downgraded"
+  },
+  "sessionReasons_recognition_failures": {
+    "message": "Too many message recognition failures"
+  },
+  "sessionReasons_runtime_error": {
+    "message": "Runtime error; switched to fallback"
+  },
+  "sessionReasons_manual_restore": {
+    "message": "Current session was restored manually and downgraded to a safer mode"
+  },
+  "sessionReasons_stability": {
+    "message": "Session is stable again"
+  },
+  "benefitLevels_low": {
+    "message": "Low"
+  },
+  "benefitLevels_medium": {
+    "message": "Medium"
+  },
+  "benefitLevels_high": {
+    "message": "High"
+  },
+  "riskTags_none": {
+    "message": "No risk"
+  },
+  "riskTags_very_low": {
+    "message": "Very low risk"
+  },
+  "riskTags_low": {
+    "message": "Low risk"
+  },
+  "riskTags_medium": {
+    "message": "Medium risk"
+  },
+  "riskTags_high": {
+    "message": "High risk"
+  },
+  "levels_off_label": {
+    "message": "Off"
+  },
+  "levels_off_description": {
+    "message": "Does not take over content or write optimization styles; only status metrics and panel features remain active."
+  },
+  "levels_off_risk": {
+    "message": "Does not affect any native functionality."
+  },
+  "levels_monitor_label": {
+    "message": "Monitor"
+  },
+  "levels_monitor_description": {
+    "message": "Enables recognition, metrics, diagnostics, and tracing, but does not take over message content for optimization."
+  },
+  "levels_monitor_risk": {
+    "message": "Does not affect any native functionality."
+  },
+  "levels_standard_label": {
+    "message": "Standard"
+  },
+  "levels_standard_description": {
+    "message": "The standard takeover strategy incrementally optimizes medium-sized offscreen content to reduce rendering and scrolling load in long conversations."
+  },
+  "levels_standard_risk": {
+    "message": "A relatively conservative optimization strategy that has almost no impact on native features."
+  },
+  "levels_performance_label": {
+    "message": "Performance"
+  },
+  "levels_performance_description": {
+    "message": "A more effective optimization strategy that folds and compresses distant content in place, then restores it in batches as it approaches the viewport."
+  },
+  "levels_performance_risk": {
+    "message": "Viewing folded messages triggers a brief restore process and may affect native features."
+  },
+  "levels_extreme_label": {
+    "message": "Extreme"
+  },
+  "levels_extreme_description": {
+    "message": "A more aggressive optimization strategy than Performance, with stronger optimization results. Coming in the next version. Stay tuned."
+  },
+  "levels_extreme_risk": {
+    "message": "Not selectable yet."
+  },
+  "panel_badgeTitle": {
+    "message": "CSP"
+  },
+  "panel_badgeWaiting": {
+    "message": "Waiting for data..."
+  },
+  "panel_title": {
+    "message": "ChatGPT Stabilizer Pro"
+  },
+  "panel_subtitle": {
+    "message": "Control panel, runtime status, and diagnostics."
+  },
+  "panel_overlay_loadingTitle": {
+    "message": "Page loading"
+  },
+  "panel_overlay_loadingBody": {
+    "message": "Recognizing the current session structure and preparing panel data. Please wait a moment."
+  },
+  "panel_overlay_optimizingTitle": {
+    "message": "Optimizing"
+  },
+  "panel_overlay_optimizingBody": {
+    "message": "Measuring, folding, and restoring history in batches. The panel will become interactive again automatically."
+  },
+  "panel_overlayStage_scanPage": {
+    "message": "Detecting page"
+  },
+  "panel_overlayStage_scanThread": {
+    "message": "Detecting session structure"
+  },
+  "panel_overlayStage_collectMessages": {
+    "message": "Collecting message index"
+  },
+  "panel_overlayStage_prepareSync": {
+    "message": "Preparing first sync"
+  },
+  "panel_overlayStage_measureContent": {
+    "message": "Measuring content"
+  },
+  "panel_overlayStage_applyOptimization": {
+    "message": "Applying optimization"
+  },
+  "panel_overlayStage_settleState": {
+    "message": "Settling state"
+  },
+  "panel_badgeSummary": {
+    "message": "{messages} messages | Optimized content blocks {optimized} | Optimization rate {coverage}"
+  },
+  "panel_eventMeta": {
+    "message": "{time} | {type}"
+  },
+  "panel_noRecentEvents": {
+    "message": "No recent events."
+  },
+  "panel_renderErrorShort": {
+    "message": "Render failed"
+  },
+  "panel_renderErrorDetail": {
+    "message": "The control panel failed to render: {error}. Try clicking Refresh or reloading the extension."
+  },
+  "panel_summaryIndicatorLabel": {
+    "message": "Optimization level"
+  },
+  "panel_summaryRateLabel": {
+    "message": "Optimization rate"
+  },
+  "panel_actions_copy": {
+    "message": "Copy"
+  },
+  "panel_actions_resync": {
+    "message": "Refresh"
+  },
+  "panel_actions_restoreSession": {
+    "message": "Restore current session"
+  },
+  "panel_actions_restoreUnavailable": {
+    "message": "The current mode does not require session restore"
+  },
+  "panel_actions_hide": {
+    "message": "Hide panel"
+  },
+  "panel_actions_collapse": {
+    "message": "Collapse panel"
+  },
+  "panel_actions_expand": {
+    "message": "Expand panel"
+  },
+  "panel_actions_show": {
+    "message": "Show panel"
+  },
+  "panel_actions_darkMode": {
+    "message": "Dark mode"
+  },
+  "panel_actions_lightMode": {
+    "message": "Light mode"
+  },
+  "panel_sections_mode": {
+    "message": "Optimization Level"
+  },
+  "panel_sections_runtime": {
+    "message": "Runtime Status"
+  },
+  "panel_sections_messages": {
+    "message": "Chat Stats"
+  },
+  "panel_sections_units": {
+    "message": "Content Block Statistics"
+  },
+  "panel_sections_impact": {
+    "message": "Estimated Impact"
+  },
+  "panel_sections_performance": {
+    "message": "Performance Metrics"
+  },
+  "panel_sections_fallback": {
+    "message": "Fallback and Errors"
+  },
+  "panel_sections_trace": {
+    "message": "Debug Log"
+  },
+  "panel_sections_events": {
+    "message": "Recent Events"
+  },
+  "panel_tabs_overview": {
+    "message": "Overview"
+  },
+  "panel_runtime_status": {
+    "message": "Status"
+  },
+  "panel_runtime_targetMode": {
+    "message": "Target mode"
+  },
+  "panel_runtime_effectiveMode": {
+    "message": "Effective mode"
+  },
+  "panel_runtime_runtimeProfile": {
+    "message": "Runtime profile"
+  },
+  "panel_runtime_deviceTier": {
+    "message": "Resolution"
+  },
+  "panel_runtime_lockedDegradation": {
+    "message": "Locked fallback"
+  },
+  "panel_runtime_chatPage": {
+    "message": "Chat page"
+  },
+  "panel_runtime_activeAdapter": {
+    "message": "Active adapter"
+  },
+  "panel_runtime_recognitionConfidence": {
+    "message": "Recognition confidence"
+  },
+  "panel_runtime_threadReady": {
+    "message": "Thread ready"
+  },
+  "panel_runtime_optimization": {
+    "message": "Optimization enabled"
+  },
+  "panel_runtime_scrollRoot": {
+    "message": "Scroll root"
+  },
+  "panel_runtime_lastSyncReason": {
+    "message": "Last sync reason"
+  },
+  "panel_messages_total": {
+    "message": "Total messages"
+  },
+  "panel_messages_units": {
+    "message": "Total content blocks"
+  },
+  "panel_messages_observed": {
+    "message": "Observed"
+  },
+  "panel_messages_optimizable": {
+    "message": "Optimizable"
+  },
+  "panel_messages_optimized": {
+    "message": "Optimized content blocks"
+  },
+  "panel_messages_keepAlive": {
+    "message": "Keep alive"
+  },
+  "panel_messages_protected": {
+    "message": "Protected"
+  },
+  "panel_messages_visible": {
+    "message": "Visible"
+  },
+  "panel_messages_nearViewport": {
+    "message": "Near viewport"
+  },
+  "panel_impact_coverage": {
+    "message": "Optimization rate"
+  },
+  "panel_impact_protectedShare": {
+    "message": "Protected share"
+  },
+  "panel_impact_skippedHeight": {
+    "message": "Optimized height"
+  },
+  "panel_impact_controlledNodes": {
+    "message": "Controlled DOM nodes"
+  },
+  "panel_impact_benefit": {
+    "message": "Benefit level"
+  },
+  "panel_performance_init": {
+    "message": "Initialization"
+  },
+  "panel_performance_lastSync": {
+    "message": "Last sync"
+  },
+  "panel_performance_avgSync": {
+    "message": "Average sync"
+  },
+  "panel_performance_lastResync": {
+    "message": "Last resync"
+  },
+  "panel_performance_resyncCount": {
+    "message": "Resync count"
+  },
+  "panel_performance_collapsedCount": {
+    "message": "Collapsed"
+  },
+  "panel_performance_collapseQueueSize": {
+    "message": "Collapse queue"
+  },
+  "panel_performance_restoreQueueSize": {
+    "message": "Restore queue"
+  },
+  "panel_performance_stateTransitionCount": {
+    "message": "State transitions"
+  },
+  "panel_performance_selfMutationSuppressedCount": {
+    "message": "Self-mutations suppressed"
+  },
+  "panel_performance_anchorCorrectionCount": {
+    "message": "Anchor corrections"
+  },
+  "panel_performance_anchorCorrectionFailureCount": {
+    "message": "Anchor correction failures"
+  },
+  "panel_performance_sessionCollapseBlockedCount": {
+    "message": "Session-blocked collapses"
+  },
+  "panel_performance_localFreezeZoneCount": {
+    "message": "Local freeze zones"
+  },
+  "panel_performance_benefitRejectedCount": {
+    "message": "Benefit rejections"
+  },
+  "panel_performance_performanceFarCount": {
+    "message": "Distant records"
+  },
+  "panel_performance_performanceBenefitEligibleCount": {
+    "message": "Foldable distant records"
+  },
+  "panel_performance_performanceCollapsePendingCount": {
+    "message": "Pending collapses"
+  },
+  "panel_performance_performanceCollapsedStableCount": {
+    "message": "Stable collapses"
+  },
+  "panel_performance_performanceBlockedByBenefitCount": {
+    "message": "Blocked by insufficient benefit"
+  },
+  "panel_performance_performanceBlockedByWriteWindowCount": {
+    "message": "Blocked by write window"
+  },
+  "panel_performance_performanceBlockedByBudgetCount": {
+    "message": "Blocked by budget"
+  },
+  "panel_performance_performanceBlockedByDwellCount": {
+    "message": "Blocked by dwell time"
+  },
+  "panel_performance_performanceExpandedByProtectionCount": {
+    "message": "Expanded by protected zone"
+  },
+  "panel_performance_structureRescanCount": {
+    "message": "Structure rescans"
+  },
+  "panel_performance_consecutiveSlowSyncCount": {
+    "message": "Consecutive slow syncs"
+  },
+  "panel_performance_nativeSearchDegradeNoticeCount": {
+    "message": "Native search notices"
+  },
+  "panel_fallback_contentVisibility": {
+    "message": "Offscreen rendering optimization"
+  },
+  "panel_fallback_containIntrinsicSize": {
+    "message": "Placeholder size control"
+  },
+  "panel_fallback_fallback": {
+    "message": "Fallback status"
+  },
+  "panel_fallback_lastAnomaly": {
+    "message": "Last anomaly"
+  },
+  "panel_fallback_degradeCount": {
+    "message": "Downgrade count"
+  },
+  "panel_fallback_recoveryCount": {
+    "message": "Recovery count"
+  },
+  "panel_fallback_recognitionFailures": {
+    "message": "Recognition failures"
+  },
+  "panel_fallback_skippedMessages": {
+    "message": "Skipped messages"
+  },
+  "panel_fallback_lastError": {
+    "message": "Last error"
+  },
+  "panel_trace_recording": {
+    "message": "Recording status"
+  },
+  "panel_trace_entries": {
+    "message": "Record count"
+  },
+  "panel_trace_domEvents": {
+    "message": "DOM events"
+  },
+  "panel_trace_mutations": {
+    "message": "Mutation batches"
+  },
+  "panel_trace_snapshots": {
+    "message": "Snapshot count"
+  },
+  "panel_trace_syncSamples": {
+    "message": "Sync samples"
+  },
+  "panel_trace_styleWrites": {
+    "message": "Style writes"
+  },
+  "panel_trace_startedAt": {
+    "message": "Start time"
+  },
+  "panel_trace_lastEntry": {
+    "message": "Last record"
+  },
+  "panel_trace_recorded": {
+    "message": "Recorded"
+  },
+  "panel_trace_start": {
+    "message": "Start debugging"
+  },
+  "panel_trace_stop": {
+    "message": "Stop debugging"
+  },
+  "panel_trace_export": {
+    "message": "Export JSON"
+  },
+  "panel_trace_copy": {
+    "message": "Copy JSON"
+  },
+  "panel_trace_clear": {
+    "message": "Clear debug log"
+  },
+  "panel_runtimeProfile_compact": {
+    "message": "Compact"
+  },
+  "panel_runtimeProfile_balanced": {
+    "message": "Balanced"
+  },
+  "panel_runtimeProfile_wide": {
+    "message": "Wide window"
+  },
+  "panel_deviceTier_low": {
+    "message": "Low"
+  },
+  "panel_deviceTier_normal": {
+    "message": "Medium"
+  },
+  "panel_deviceTier_high": {
+    "message": "High"
+  },
+  "panel_recognitionConfidence_none": {
+    "message": "None"
+  },
+  "panel_recognitionConfidence_low": {
+    "message": "Low"
+  },
+  "panel_recognitionConfidence_medium": {
+    "message": "Medium"
+  },
+  "panel_recognitionConfidence_high": {
+    "message": "High"
+  },
+  "panel_runtimeAdapter_chatgpt_primary": {
+    "message": "Primary adapter"
+  },
+  "panel_runtimeAdapter_chatgpt_article_fallback": {
+    "message": "Article fallback adapter"
+  },
+  "panel_traceKind_trace": {
+    "message": "Debug"
+  },
+  "panel_traceKind_dom_event": {
+    "message": "DOM event"
+  },
+  "panel_traceKind_sync": {
+    "message": "Sync"
+  },
+  "panel_traceKind_style": {
+    "message": "Style"
+  },
+  "panel_traceKind_observer": {
+    "message": "Observer"
+  },
+  "panel_traceKind_mutation": {
+    "message": "Mutation"
+  },
+  "panel_traceType_start": {
+    "message": "Start"
+  },
+  "panel_traceType_end": {
+    "message": "End"
+  },
+  "panel_traceType_batch": {
+    "message": "Batch"
+  },
+  "panel_traceType_toggle": {
+    "message": "Toggle"
+  },
+  "panel_traceType_clear": {
+    "message": "Clear"
+  },
+  "panel_traceType_export": {
+    "message": "Export"
+  },
+  "panel_traceType_copy": {
+    "message": "Copy"
+  },
+  "snapshot_header": {
+    "message": "{appName} {version}"
+  },
+  "snapshot_time": {
+    "message": "Time: {value}"
+  },
+  "snapshot_status": {
+    "message": "Status: {value}"
+  },
+  "snapshot_level": {
+    "message": "Level: {value}"
+  },
+  "snapshot_targetMode": {
+    "message": "Target mode: {value}"
+  },
+  "snapshot_effectiveMode": {
+    "message": "Effective mode: {value}"
+  },
+  "snapshot_page": {
+    "message": "Page: {pageType} ({path})"
+  },
+  "snapshot_pageChat": {
+    "message": "Chat page"
+  },
+  "snapshot_pageNonChat": {
+    "message": "Non-chat page"
+  },
+  "snapshot_optimization": {
+    "message": "Optimization enabled: {value}"
+  },
+  "snapshot_contentVisibility": {
+    "message": "Offscreen rendering optimization: {value}"
+  },
+  "snapshot_containIntrinsicSize": {
+    "message": "Placeholder size control: {value}"
+  },
+  "snapshot_messages": {
+    "message": "Total messages: {value}"
+  },
+  "snapshot_units": {
+    "message": "Total content blocks: {value}"
+  },
+  "snapshot_optimized": {
+    "message": "Optimized content blocks: {value}"
+  },
+  "snapshot_coverage": {
+    "message": "Optimization rate: {value}"
+  },
+  "snapshot_skippedHeight": {
+    "message": "Optimized height: {value}"
+  },
+  "snapshot_controlledNodes": {
+    "message": "Estimated controlled DOM nodes: {value}"
+  },
+  "snapshot_init": {
+    "message": "Initialization: {value}"
+  },
+  "snapshot_lastSync": {
+    "message": "Last sync: {value}"
+  },
+  "snapshot_avgSync": {
+    "message": "Average sync: {value}"
+  },
+  "snapshot_lastResync": {
+    "message": "Last resync: {value}"
+  },
+  "snapshot_resyncCount": {
+    "message": "Resync count: {value}"
+  },
+  "snapshot_fallback": {
+    "message": "Fallback status: {value}"
+  },
+  "snapshot_lastAnomaly": {
+    "message": "Last anomaly reason: {value}"
+  },
+  "snapshot_degradeCount": {
+    "message": "Downgrade count: {value}"
+  },
+  "snapshot_recoveryCount": {
+    "message": "Recovery count: {value}"
+  },
+  "snapshot_lockedDegradation": {
+    "message": "Locked fallback: {value}"
+  },
+  "snapshot_lastError": {
+    "message": "Last error: {value}"
+  },
+  "events_controllerInitialized": {
+    "message": "Controller initialized."
+  },
+  "events_copyDiagnosticsSuccess": {
+    "message": "Copied diagnostics snapshot."
+  },
+  "events_copyDiagnosticsFailure": {
+    "message": "Failed to copy diagnostics snapshot."
+  },
+  "events_levelUnavailable": {
+    "message": "{level} is not available in this build."
+  },
+  "events_levelChanged": {
+    "message": "Optimization level changed from {previous} to {next}."
+  },
+  "events_manualResyncRequested": {
+    "message": "Manual resync requested: {reason}."
+  },
+  "events_sessionRestoreRequested": {
+    "message": "Session restore requested: {reason}."
+  },
+  "events_sessionRestoreComplete": {
+    "message": "Session restore complete: {reason}."
+  },
+  "events_sessionRestoreUnavailable": {
+    "message": "{mode} does not support session restore."
+  },
+  "events_resyncComplete": {
+    "message": "Resync complete: {reason}."
+  },
+  "events_syncComplete": {
+    "message": "Sync complete: {reason}."
+  },
+  "events_nativeSearchDegraded": {
+    "message": "This session contains folded history. Native browser search may not find that content. Click \"Restore current session\" first if needed."
+  },
+  "events_runtimeError": {
+    "message": "Runtime error: {message}."
+  },
+  "logs_diagnosticsListenerFailed": {
+    "message": "Diagnostics listener failed."
+  },
+  "logs_syncFailed": {
+    "message": "Sync failed."
+  },
+  "logs_panelRenderFailed": {
+    "message": "Panel render failed."
+  },
+  "appName": {
+    "message": "ChatGPT Stabilizer Pro"
+  },
+  "appDesc": {
+    "message": "Improves the smoothness and stability of very long ChatGPT conversations with offscreen rendering optimization and distant conversation folding."
+  },
+  "syncReasons_interaction": {
+    "message": "Interaction protection"
+  },
+  "syncReasons_protection_expiry": {
+    "message": "Protection expired"
+  }
+}
