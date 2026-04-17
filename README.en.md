@@ -10,7 +10,7 @@ ChatGPT Stabilizer Pro is a desktop browser extension for those very long ChatGP
 
 | Light mode | Dark mode |
 | --- | --- |
-| <img src="./img/light.jpg" alt="Control panel in light mode" width="520"> | <img src="./img/dark.jpg" alt="Control panel in dark mode" width="520"> |
+| <img src="./img/light-en.jpg" alt="Control panel in light mode" width="520"> | <img src="./img/dark-en.jpg" alt="Control panel in dark mode" width="520"> |
 
 ## Features
 
