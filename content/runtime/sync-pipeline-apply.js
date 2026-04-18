@@ -29,6 +29,22 @@
         1
       );
       const activeOverlayJob = schedulerState.activeOverlayJob;
+      const newOptimizedTaskCount = tasks.reduce(
+        (count, task) =>
+          Boolean(task.decision?.optimize) && !task.previousOptimized
+            ? count + 1
+            : count,
+        0
+      );
+      const hasCompatibleActiveOverlayJob =
+        schedulerState.activeOverlayJob &&
+        schedulerState.activeOverlayJob.routeKey === routeKey &&
+        schedulerState.activeOverlayJob.level === runtimeState.level &&
+        schedulerState.activeOverlayJob.effectiveMode === runtimeState.effectiveMode;
+      const isStreamingOnlyDomContentFollowup =
+        pipelineContext.begin.reason === "dom-content" &&
+        pipelineContext.begin.streamingOnlyDomContent &&
+        newOptimizedTaskCount <= 0;
 
       if (
         activeOverlayJob &&
@@ -39,22 +55,17 @@
         this.clearOptimizationOverlayJob(activeOverlayJob);
       }
 
-      if (
-        schedulerState.activeOverlayJob &&
-        schedulerState.activeOverlayJob.routeKey === routeKey &&
-        schedulerState.activeOverlayJob.level === runtimeState.level &&
-        schedulerState.activeOverlayJob.effectiveMode === runtimeState.effectiveMode
-      ) {
-        return this.createOptimizationOverlayJob(totalUnitCount, routeKey);
+      if (isStreamingOnlyDomContentFollowup) {
+        if (hasCompatibleActiveOverlayJob) {
+          this.clearOptimizationOverlayJob(schedulerState.activeOverlayJob);
+        }
+
+        return null;
       }
 
-      const newOptimizedTaskCount = tasks.reduce(
-        (count, task) =>
-          Boolean(task.decision?.optimize) && !task.previousOptimized
-            ? count + 1
-            : count,
-        0
-      );
+      if (hasCompatibleActiveOverlayJob) {
+        return this.createOptimizationOverlayJob(totalUnitCount, routeKey);
+      }
 
       if (
         !runtimeContext.levelConfig?.enableOptimization ||

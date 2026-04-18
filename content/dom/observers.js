@@ -179,11 +179,25 @@
           const mutationState = this.processMutations(mutations);
 
           if (mutationState.structureChanged) {
+            this.clearStreamingContentSync();
             this.scheduleSync("dom-structure", false);
             return;
           }
 
           if (mutationState.contentChanged) {
+            if (
+              mutationState.streamingOnly &&
+              mutationState.latestStreamingRecordId > 0 &&
+              !mutationState.touchesMultipleRecords &&
+              !mutationState.touchesNonStreamingRecord
+            ) {
+              this.scheduleStreamingContentSync(
+                mutationState.latestStreamingRecordId
+              );
+              return;
+            }
+
+            this.clearStreamingContentSync();
             this.scheduleSync("dom-content", false);
           }
         });
@@ -459,6 +473,7 @@
     teardownObservers() {
       const observerState = this.state.observers;
 
+      this.clearStreamingContentSync();
       this.clearLowPrioritySync();
 
       if (observerState.mutationObserver) {
@@ -497,7 +512,15 @@
     processMutations(mutations) {
       let structureChanged = false;
       let contentChanged = false;
+      let streamingOnly = mutations.length > 0;
+      let touchesNonStreamingRecord = false;
+      const affectedRecordIds = new Set();
       const now = performance.now();
+      const latestAssistantRecord = this.findLatestAssistantRecord(
+        this.registry.getOrderedRecords()
+      );
+      const latestAssistantRecordId = latestAssistantRecord?.id || 0;
+      let latestStreamingRecordId = 0;
 
       for (let index = 0; index < mutations.length; index += 1) {
         const mutation = mutations[index];
@@ -520,6 +543,20 @@
           }
 
           if (record) {
+            const mutationStreamingCandidate =
+              this.isStreamingOnlyMutationCandidate({
+                mutation,
+                record,
+                latestAssistantRecordId,
+              });
+
+            affectedRecordIds.add(record.id);
+            latestStreamingRecordId = mutationStreamingCandidate
+              ? Math.max(latestStreamingRecordId, record.id)
+              : latestStreamingRecordId;
+            touchesNonStreamingRecord =
+              touchesNonStreamingRecord || !mutationStreamingCandidate;
+            streamingOnly = streamingOnly && mutationStreamingCandidate;
             this.markRecordContentDirty(record, {
               invalidateProfile: false,
               reason: "content-attribute",
@@ -539,6 +576,20 @@
           }
 
           if (record) {
+            const mutationStreamingCandidate =
+              this.isStreamingOnlyMutationCandidate({
+                mutation,
+                record,
+                latestAssistantRecordId,
+              });
+
+            affectedRecordIds.add(record.id);
+            latestStreamingRecordId = mutationStreamingCandidate
+              ? Math.max(latestStreamingRecordId, record.id)
+              : latestStreamingRecordId;
+            touchesNonStreamingRecord =
+              touchesNonStreamingRecord || !mutationStreamingCandidate;
+            streamingOnly = streamingOnly && mutationStreamingCandidate;
             this.markRecordContentDirty(record, {
               invalidateProfile: false,
               reason: "text-content",
@@ -575,6 +626,20 @@
               continue;
             }
 
+            const mutationStreamingCandidate =
+              this.isStreamingOnlyMutationCandidate({
+                mutation,
+                record,
+                latestAssistantRecordId,
+              });
+
+            affectedRecordIds.add(record.id);
+            latestStreamingRecordId = mutationStreamingCandidate
+              ? Math.max(latestStreamingRecordId, record.id)
+              : latestStreamingRecordId;
+            touchesNonStreamingRecord =
+              touchesNonStreamingRecord || !mutationStreamingCandidate;
+            streamingOnly = streamingOnly && mutationStreamingCandidate;
             this.markRecordContentDirty(record, {
               invalidateProfile: this.mutationNodesInvalidateContentProfile(
                 mutation.addedNodes
@@ -590,7 +655,72 @@
       return {
         structureChanged,
         contentChanged,
+        affectedRecordIds: Array.from(affectedRecordIds),
+        streamingOnly: contentChanged ? streamingOnly : false,
+        latestStreamingRecordId,
+        touchesMultipleRecords: affectedRecordIds.size > 1,
+        touchesNonStreamingRecord,
       };
+    },
+
+    isStreamingMutationAttributeName(attributeName) {
+      return (
+        attributeName === "aria-busy" ||
+        attributeName === "data-is-streaming" ||
+        attributeName === "data-state" ||
+        attributeName === "data-status"
+      );
+    },
+
+    isStreamingOnlyMutationCandidate({
+      mutation,
+      record,
+      latestAssistantRecordId = 0,
+    }) {
+      if (!record || !mutation) {
+        return false;
+      }
+
+      const hasStreamingSignal = app.dom.hasStreamingSignal(
+        record.messageElement,
+        record.contentElement
+      );
+      const isLatestAssistantRecord =
+        latestAssistantRecordId > 0 && record.id === latestAssistantRecordId;
+      const hasStreamingContext = Boolean(record.streaming || hasStreamingSignal);
+
+      if (!isLatestAssistantRecord && !hasStreamingContext) {
+        return false;
+      }
+
+      if (mutation.type === "attributes") {
+        if (!this.isStreamingMutationAttributeName(mutation.attributeName)) {
+          return false;
+        }
+
+        if (record.streaming !== hasStreamingSignal) {
+          return false;
+        }
+
+        return hasStreamingContext;
+      }
+
+      if (mutation.type === "characterData") {
+        return hasStreamingContext;
+      }
+
+      if (mutation.type === "childList") {
+        if (
+          this.mutationNodesInvalidateContentProfile(mutation.addedNodes) ||
+          this.mutationNodesInvalidateContentProfile(mutation.removedNodes)
+        ) {
+          return false;
+        }
+
+        return hasStreamingContext;
+      }
+
+      return false;
     },
 
     findRecordForMutationTarget(targetNode) {

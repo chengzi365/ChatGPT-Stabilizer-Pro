@@ -153,8 +153,14 @@
         );
       const didRescanStructure = shouldRescanStructure;
       let collectionStats = pageState.lastCollectionStats;
+      let structureDiff = null;
 
       if (shouldRescanStructure) {
+        const previousRecords = this.registry.getOrderedRecords();
+        const previousLatestAssistantRecord =
+          previousRecords.length > 0
+            ? this.findLatestAssistantRecord(previousRecords)
+            : null;
         const collectionResult = pageService.collectSyncCollection(pageSnapshot);
         const syncResult = this.registry.sync(collectionResult.units);
 
@@ -166,6 +172,13 @@
         }
 
         collectionStats = collectionResult.stats;
+        structureDiff = syncResult.structureDiff
+          ? {
+              ...syncResult.structureDiff,
+              previousLatestAssistantRecordId:
+                previousLatestAssistantRecord?.id || 0,
+            }
+          : null;
       }
 
       const records = this.registry.getOrderedRecords();
@@ -201,6 +214,7 @@
       recordsState.items = records;
       recordsState.collectionStats = collectionStats;
       recordsState.messageTotal = messageTotal;
+      recordsState.structureDiff = structureDiff;
       recordsState.latestAssistantRecord = latestAssistantRecord;
       recordsState.focusedRecord = focusedRecord;
       recordsState.selectedRecord = selectedRecord;
@@ -229,6 +243,18 @@
               failures: collectionStats.failures,
             }
           : null,
+        structureDiff: structureDiff
+          ? {
+              addedCount: structureDiff.addedRecordIds.length,
+              removedCount: structureDiff.removedRecordIds.length,
+              elementReplacedCount:
+                structureDiff.elementReplacedRecordIds.length,
+              firstChangedIndex: structureDiff.firstChangedIndex,
+              orderChangedStartIndex: structureDiff.orderChangedStartIndex,
+              previousLatestAssistantRecordId:
+                structureDiff.previousLatestAssistantRecordId || 0,
+            }
+          : null,
         latestAssistantRecord: getTraceRecordSummary(this, latestAssistantRecord),
         focusedRecord: getTraceRecordSummary(this, focusedRecord),
         selectedRecord: getTraceRecordSummary(this, selectedRecord),
@@ -243,6 +269,7 @@
       const { reason, isResync, now } = pipelineContext.begin;
       const { rootRect, focusedRecord, selectedRecord, latestAssistantRecord } =
         recordsState;
+      const { structureDiff } = recordsState;
       const { levelConfig, shouldMeasureRecords } = runtimeContext;
       const focusedRecordId = focusedRecord ? focusedRecord.id : 0;
       const selectedRecordId = selectedRecord ? selectedRecord.id : 0;
@@ -258,6 +285,7 @@
         selectedRecordId,
         latestAssistantRecordId,
         keepAliveCount: levelConfig.keepAliveCount,
+        structureDiff,
       });
       const usingModeStateRefreshSet = modeStateRefreshSet instanceof Set;
       const baseStateRefreshSet = usingModeStateRefreshSet
@@ -337,7 +365,14 @@
       pipelineContext.decision.modeDecisionWorkset = this.collectModeDecisionWorkset(
         records,
         reason,
-        isResync
+        isResync,
+        {
+          structureDiff,
+          latestAssistantRecordId,
+          previousLatestAssistantRecordId:
+            structureDiff?.previousLatestAssistantRecordId || 0,
+          keepAliveCount: levelConfig.keepAliveCount,
+        }
       );
       pipelineContext.decision.baseDecisionWorkset = usingModeStateRefreshSet
         ? null

@@ -16,6 +16,8 @@
       const added = [];
       const removed = [];
       const orderedRecords = [];
+      const previousRecords = this.orderedRecords.slice();
+      const elementReplaced = [];
 
       for (let index = 0; index < units.length; index += 1) {
         const unit = units[index];
@@ -26,7 +28,11 @@
           record = this.createRecord(unit);
           added.push(record);
         } else {
-          this.updateRecord(record, unit);
+          const updateResult = this.updateRecord(record, unit);
+
+          if (updateResult?.elementReplaced) {
+            elementReplaced.push(record);
+          }
         }
 
         this.setRecordStableKey(record, unit.stableKey);
@@ -52,10 +58,36 @@
 
       this.orderedRecords = orderedRecords;
 
+      const commonCount = Math.min(previousRecords.length, orderedRecords.length);
+      let orderChangedStartIndex = -1;
+
+      for (let index = 0; index < commonCount; index += 1) {
+        if (previousRecords[index]?.id !== orderedRecords[index]?.id) {
+          orderChangedStartIndex = index;
+          break;
+        }
+      }
+
+      const firstChangedIndex =
+        orderChangedStartIndex >= 0
+          ? orderChangedStartIndex
+          : previousRecords.length !== orderedRecords.length
+          ? commonCount
+          : -1;
+
       return {
         added,
         removed,
         records: orderedRecords,
+        structureDiff: {
+          addedRecordIds: added.map((record) => record.id),
+          removedRecordIds: removed.map((record) => record.id),
+          elementReplacedRecordIds: elementReplaced.map((record) => record.id),
+          firstChangedIndex,
+          orderChangedStartIndex,
+          previousRecordCount: previousRecords.length,
+          nextRecordCount: orderedRecords.length,
+        },
       };
     }
 
@@ -216,6 +248,13 @@
       record.messageId = unit.messageId || "";
       record.turnId = unit.turnId || "";
       record.turnOrder = Number.isFinite(unit.turnOrder) ? unit.turnOrder : 0;
+
+      return {
+        stableKeyChanged,
+        contentChanged,
+        messageChanged,
+        elementReplaced: contentChanged || messageChanged,
+      };
     }
 
     setRecordStableKey(record, stableKey) {

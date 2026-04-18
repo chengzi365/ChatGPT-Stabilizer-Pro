@@ -4,47 +4,178 @@
   const performanceMode = app.modes.performance || (app.modes.performance = {});
   const { getPerformanceRuntime } = performanceMode;
 
+  function shouldFallbackToFullPerformanceSet(reason, isResync) {
+    return (
+      isResync ||
+      reason === "startup" ||
+      reason === "route-change" ||
+      reason === "level-change" ||
+      reason === "manual-resync" ||
+      reason === "manual-restore"
+    );
+  }
+
+  function addRangeToSet(targetSet, records, startIndex, endIndex, padding = 0) {
+    if (
+      !(targetSet instanceof Set) ||
+      !Array.isArray(records) ||
+      records.length === 0 ||
+      !Number.isInteger(startIndex) ||
+      !Number.isInteger(endIndex)
+    ) {
+      return;
+    }
+
+    const start = Math.max(0, Math.min(startIndex, endIndex) - padding);
+    const end = Math.min(
+      records.length - 1,
+      Math.max(startIndex, endIndex) + padding
+    );
+
+    for (let index = start; index <= end; index += 1) {
+      targetSet.add(records[index].id);
+    }
+  }
+
+  function addRecordWindowById(targetSet, records, recordId, padding = 0) {
+    if (!(targetSet instanceof Set) || !Number.isFinite(recordId) || recordId <= 0) {
+      return;
+    }
+
+    for (let index = 0; index < records.length; index += 1) {
+      if (records[index]?.id === recordId) {
+        addRangeToSet(targetSet, records, index, index, padding);
+        return;
+      }
+    }
+  }
+
+  function addRecordWindows(targetSet, records, recordIds, padding = 0) {
+    if (!Array.isArray(recordIds)) {
+      return;
+    }
+
+    for (let index = 0; index < recordIds.length; index += 1) {
+      addRecordWindowById(targetSet, records, recordIds[index], padding);
+    }
+  }
+
+  function buildPerformanceStructureScopedSet({
+    controller,
+    records,
+    structureDiff,
+    latestAssistantRecordId = 0,
+    previousLatestAssistantRecordId = 0,
+    keepAliveCount = 0,
+    runtime,
+    basePadding = 0,
+    warmPadding = 0,
+  }) {
+    if (!structureDiff || !Array.isArray(records) || records.length === 0) {
+      return null;
+    }
+
+    const scopedSet = new Set();
+    const changedIndexCandidates = [
+      structureDiff.firstChangedIndex,
+      structureDiff.orderChangedStartIndex,
+    ].filter((value) => Number.isInteger(value) && value >= 0);
+
+    if (changedIndexCandidates.length > 0) {
+      const firstChangedIndex = Math.min(...changedIndexCandidates);
+      addRangeToSet(
+        scopedSet,
+        records,
+        firstChangedIndex,
+        records.length - 1,
+        basePadding
+      );
+    }
+
+    addRecordWindows(
+      scopedSet,
+      records,
+      structureDiff.addedRecordIds,
+      Math.max(1, basePadding)
+    );
+    addRecordWindows(
+      scopedSet,
+      records,
+      structureDiff.elementReplacedRecordIds,
+      Math.max(1, basePadding)
+    );
+    addRecordWindowById(
+      scopedSet,
+      records,
+      latestAssistantRecordId,
+      Math.max(1, basePadding)
+    );
+    addRecordWindowById(
+      scopedSet,
+      records,
+      previousLatestAssistantRecordId,
+      Math.max(1, basePadding)
+    );
+
+    if (keepAliveCount > 0) {
+      addRangeToSet(
+        scopedSet,
+        records,
+        Math.max(0, records.length - keepAliveCount),
+        records.length - 1,
+        1
+      );
+    }
+
+    addRangeToSet(
+      scopedSet,
+      records,
+      runtime?.warmStartIndex ?? -1,
+      runtime?.warmEndIndex ?? -1,
+      warmPadding
+    );
+
+    return scopedSet;
+  }
+
   function collectPerformanceDecisionWorkset({
     controller,
     strategySession,
     records,
     reason,
     isResync,
+    structureDiff,
+    latestAssistantRecordId,
+    previousLatestAssistantRecordId,
+    keepAliveCount,
   }) {
-    if (
-      isResync ||
-      reason === "startup" ||
-      reason === "route-change" ||
-      reason === "level-change" ||
-      reason === "manual-resync" ||
-      reason === "manual-restore" ||
-      reason === "dom-structure"
-    ) {
+    if (shouldFallbackToFullPerformanceSet(reason, isResync)) {
       return null;
     }
 
     const runtime = getPerformanceRuntime(strategySession);
-    const workset = new Set();
+    const workset =
+      reason === "dom-structure"
+        ? buildPerformanceStructureScopedSet({
+            controller,
+            records,
+            structureDiff,
+            latestAssistantRecordId,
+            previousLatestAssistantRecordId,
+            keepAliveCount,
+            runtime,
+            basePadding: controller.isForegroundBusy() ? 1 : 2,
+            warmPadding: controller.isForegroundBusy() ? 1 : 2,
+          })
+        : new Set();
+
+    if (!(workset instanceof Set)) {
+      return null;
+    }
+
     const rangePadding = controller.isForegroundBusy() ? 1 : 2;
     const addRange = (startIndex, endIndex, padding = 0) => {
-      if (
-        !Number.isInteger(startIndex) ||
-        !Number.isInteger(endIndex) ||
-        startIndex < 0 ||
-        endIndex < 0
-      ) {
-        return;
-      }
-
-      const start = Math.max(0, Math.min(startIndex, endIndex) - padding);
-      const end = Math.min(
-        records.length - 1,
-        Math.max(startIndex, endIndex) + padding
-      );
-
-      for (let index = start; index <= end; index += 1) {
-        workset.add(records[index].id);
-      }
+      addRangeToSet(workset, records, startIndex, endIndex, padding);
     };
 
     addRange(runtime?.warmStartIndex ?? -1, runtime?.warmEndIndex ?? -1, rangePadding);
@@ -88,41 +219,36 @@
     selectedRecordId,
     latestAssistantRecordId,
     keepAliveCount,
+    structureDiff,
   }) {
-    if (
-      isResync ||
-      reason === "startup" ||
-      reason === "route-change" ||
-      reason === "level-change" ||
-      reason === "manual-resync" ||
-      reason === "manual-restore" ||
-      reason === "dom-structure"
-    ) {
+    if (shouldFallbackToFullPerformanceSet(reason, isResync)) {
       return null;
     }
 
     const runtime = getPerformanceRuntime(strategySession);
-    const refreshSet = new Set();
+    const refreshSet =
+      reason === "dom-structure"
+        ? buildPerformanceStructureScopedSet({
+            controller,
+            records,
+            structureDiff,
+            latestAssistantRecordId,
+            previousLatestAssistantRecordId:
+              structureDiff?.previousLatestAssistantRecordId || 0,
+            keepAliveCount,
+            runtime,
+            basePadding: controller.isForegroundBusy() ? 2 : 4,
+            warmPadding: controller.isForegroundBusy() ? 2 : 4,
+          })
+        : new Set();
+
+    if (!(refreshSet instanceof Set)) {
+      return null;
+    }
+
     const rangePadding = controller.isForegroundBusy() ? 2 : 4;
     const addRange = (startIndex, endIndex, padding = 0) => {
-      if (
-        !Number.isInteger(startIndex) ||
-        !Number.isInteger(endIndex) ||
-        startIndex < 0 ||
-        endIndex < 0
-      ) {
-        return;
-      }
-
-      const start = Math.max(0, Math.min(startIndex, endIndex) - padding);
-      const end = Math.min(
-        records.length - 1,
-        Math.max(startIndex, endIndex) + padding
-      );
-
-      for (let index = start; index <= end; index += 1) {
-        refreshSet.add(records[index].id);
-      }
+      addRangeToSet(refreshSet, records, startIndex, endIndex, padding);
     };
 
     addRange(runtime.warmStartIndex, runtime.warmEndIndex, rangePadding);

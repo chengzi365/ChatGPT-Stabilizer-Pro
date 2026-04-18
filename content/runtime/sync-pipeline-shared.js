@@ -139,6 +139,7 @@
         routeKey,
         now: performance.now(),
         sessionRouteChanged,
+        streamingOnlyDomContent: false,
       },
       page: {
         service: pageService,
@@ -150,6 +151,7 @@
         items: [],
         collectionStats: null,
         messageTotal: 0,
+        structureDiff: null,
         latestAssistantRecord: null,
         focusedRecord: null,
         selectedRecord: null,

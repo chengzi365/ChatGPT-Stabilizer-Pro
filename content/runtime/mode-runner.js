@@ -473,6 +473,45 @@
       records.forEach((record) => this.clearRecordStyles(record));
     },
 
+    shouldQueueRecordStyleTask(record, decision) {
+      if (!record || !decision) {
+        return false;
+      }
+
+      const optimize = Boolean(decision.optimize);
+      const keepAlive = Boolean(decision.keepAlive);
+      const currentContentElement = record.contentElement || null;
+      const appliedContentElement = record.baseStyleElement || null;
+      const hasAppliedBaseState =
+        Boolean(record.baseStyleOptimized) ||
+        Boolean(record.baseStyleKeepAlive) ||
+        Boolean(record.baseStyleId) ||
+        Boolean(appliedContentElement);
+      const hasNextBaseState = optimize || keepAlive;
+      const nextModeState = this.modeStyleController.normalizeModeState(
+        decision.modeState || null
+      );
+
+      if (
+        appliedContentElement !== currentContentElement &&
+        (hasAppliedBaseState || hasNextBaseState || nextModeState)
+      ) {
+        return true;
+      }
+
+      if (
+        record.baseStyleOptimized !== optimize ||
+        record.baseStyleKeepAlive !== keepAlive
+      ) {
+        return true;
+      }
+
+      return !this.modeStyleController.isSameModeState(
+        record.modeState || null,
+        nextModeState
+      );
+    },
+
     applyRecordStyles(record, decision) {
       const traceRecord =
         this.traceRecorder &&
@@ -590,7 +629,7 @@
       this.invokeModeHook(null, "markRecordDecisionDirty", { record });
     },
 
-    collectModeDecisionWorkset(records, reason, isResync) {
+    collectModeDecisionWorkset(records, reason, isResync, extra = {}) {
       return (
         this.invokeModeHook(
           null,
@@ -599,6 +638,7 @@
             records,
             reason,
             isResync,
+            ...extra,
           },
           { ensureSession: true }
         ) || null

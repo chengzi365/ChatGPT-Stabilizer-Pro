@@ -30,6 +30,14 @@
 
       pipelineContext.begin.level = runtimeState.level;
       pipelineContext.begin.effectiveMode = runtimeState.effectiveMode;
+      pipelineContext.begin.streamingOnlyDomContent =
+        reason === "dom-content" &&
+        !isResync &&
+        this.consumePendingStreamingDomContentSync(
+          routeKey,
+          runtimeState.level,
+          runtimeState.effectiveMode
+        );
       return pipelineContext;
     },
 

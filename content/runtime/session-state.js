@@ -130,6 +130,15 @@
       overlayJobSeq: 0,
       activeOverlayJob: null,
       overlayCompletionTimer: 0,
+      streamingContentSyncHandle: 0,
+      streamingContentSyncRecordId: 0,
+      streamingContentSyncRouteKey: "",
+      streamingContentSyncLevel: "",
+      streamingContentSyncEffectiveMode: "",
+      pendingStreamingDomContentSync: false,
+      pendingStreamingDomContentRouteKey: "",
+      pendingStreamingDomContentLevel: "",
+      pendingStreamingDomContentEffectiveMode: "",
     };
   }
 

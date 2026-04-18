@@ -32,6 +32,92 @@
       return reason === "measurement-backlog";
     },
 
+    clearStreamingContentSync() {
+      const schedulerState = this.state.scheduler;
+
+      if (schedulerState.streamingContentSyncHandle) {
+        globalThis.clearTimeout(schedulerState.streamingContentSyncHandle);
+      }
+
+      schedulerState.streamingContentSyncHandle = 0;
+      schedulerState.streamingContentSyncRecordId = 0;
+      schedulerState.streamingContentSyncRouteKey = "";
+      schedulerState.streamingContentSyncLevel = "";
+      schedulerState.streamingContentSyncEffectiveMode = "";
+    },
+
+    clearPendingStreamingDomContentSync() {
+      const schedulerState = this.state.scheduler;
+
+      schedulerState.pendingStreamingDomContentSync = false;
+      schedulerState.pendingStreamingDomContentRouteKey = "";
+      schedulerState.pendingStreamingDomContentLevel = "";
+      schedulerState.pendingStreamingDomContentEffectiveMode = "";
+    },
+
+    consumePendingStreamingDomContentSync(
+      routeKey = "",
+      level = "",
+      effectiveMode = ""
+    ) {
+      const schedulerState = this.state.scheduler;
+      const isMatch =
+        schedulerState.pendingStreamingDomContentSync &&
+        schedulerState.pendingStreamingDomContentRouteKey === routeKey &&
+        schedulerState.pendingStreamingDomContentLevel === level &&
+        schedulerState.pendingStreamingDomContentEffectiveMode === effectiveMode;
+
+      this.clearPendingStreamingDomContentSync();
+      return isMatch;
+    },
+
+    scheduleStreamingContentSync(recordId, delayMs = 96) {
+      const schedulerState = this.state.scheduler;
+      const runtimeState = this.state.runtime;
+      const routeKey = this.services.page.getRouteKey();
+
+      if (
+        runtimeState.level === "off" ||
+        !Number.isFinite(recordId) ||
+        recordId <= 0
+      ) {
+        this.clearStreamingContentSync();
+        return;
+      }
+
+      if (schedulerState.streamingContentSyncHandle) {
+        return;
+      }
+
+      schedulerState.streamingContentSyncRecordId = recordId;
+      schedulerState.streamingContentSyncRouteKey = routeKey;
+      schedulerState.streamingContentSyncLevel = runtimeState.level;
+      schedulerState.streamingContentSyncEffectiveMode = runtimeState.effectiveMode;
+      schedulerState.streamingContentSyncHandle = globalThis.setTimeout(() => {
+        const pendingRouteKey = schedulerState.streamingContentSyncRouteKey;
+        const pendingLevel = schedulerState.streamingContentSyncLevel;
+        const pendingEffectiveMode =
+          schedulerState.streamingContentSyncEffectiveMode;
+
+        this.clearStreamingContentSync();
+
+        if (
+          this.services.page.getRouteKey() !== pendingRouteKey ||
+          this.state.runtime.level !== pendingLevel ||
+          this.state.runtime.effectiveMode !== pendingEffectiveMode
+        ) {
+          return;
+        }
+
+        this.scheduleSync("dom-content", false, {
+          streamingOnly: true,
+          routeKey: pendingRouteKey,
+          level: pendingLevel,
+          effectiveMode: pendingEffectiveMode,
+        });
+      }, Math.max(16, delayMs));
+    },
+
     waitForNextPaint() {
       return new Promise((resolve) => {
         scheduleAfterNextPaint(resolve);
@@ -304,8 +390,16 @@
       });
     },
 
-    scheduleSync(reason, isResync = false) {
+    scheduleSync(reason, isResync = false, options = null) {
       const schedulerState = this.state.scheduler;
+      const streamingOnlyDomContent =
+        reason === "dom-content" &&
+        !isResync &&
+        Boolean(options?.streamingOnly);
+
+      if (reason !== "dom-content" || isResync) {
+        this.clearStreamingContentSync();
+      }
 
       if (reason !== "measurement-backlog") {
         this.clearLowPrioritySync();
@@ -316,6 +410,18 @@
         this.getSyncReasonPriority(schedulerState.scheduledReason)
       ) {
         schedulerState.scheduledReason = reason;
+      }
+
+      if (streamingOnlyDomContent && schedulerState.scheduledReason === "dom-content") {
+        schedulerState.pendingStreamingDomContentSync = true;
+        schedulerState.pendingStreamingDomContentRouteKey =
+          options?.routeKey || this.services.page.getRouteKey();
+        schedulerState.pendingStreamingDomContentLevel =
+          options?.level || this.state.runtime.level;
+        schedulerState.pendingStreamingDomContentEffectiveMode =
+          options?.effectiveMode || this.state.runtime.effectiveMode;
+      } else {
+        this.clearPendingStreamingDomContentSync();
       }
 
       if (schedulerState.syncScheduled) {
@@ -463,7 +569,18 @@
       const runtimeState = this.state.runtime;
 
       if (schedulerState.isSyncing) {
-        this.scheduleSync(reason, isResync);
+        const rescheduleOptions =
+          reason === "dom-content" && schedulerState.pendingStreamingDomContentSync
+            ? {
+                streamingOnly: true,
+                routeKey: schedulerState.pendingStreamingDomContentRouteKey,
+                level: schedulerState.pendingStreamingDomContentLevel,
+                effectiveMode:
+                  schedulerState.pendingStreamingDomContentEffectiveMode,
+              }
+            : null;
+
+        this.scheduleSync(reason, isResync, rescheduleOptions);
         return;
       }
 

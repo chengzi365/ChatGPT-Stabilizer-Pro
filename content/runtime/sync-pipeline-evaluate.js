@@ -43,23 +43,12 @@
       let warmStartIndex = -1;
       let warmEndIndex = -1;
       const traceChangedRecords = [];
-      const captureDecisionRecord = (record, decision, previousState) => {
+      const captureDecisionRecord = (record, decision) => {
         if (
           traceChangedRecords.length >= 8 ||
           !this.traceRecorder ||
           typeof this.traceRecorder.buildTraceRecordSummary !== "function"
         ) {
-          return;
-        }
-
-        const nextModeId = decision?.modeState?.modeId || "";
-        const nextDistanceTier = decision?.modeState?.distanceTier || "";
-        const changed =
-          previousState.optimized !== Boolean(decision?.optimize) ||
-          previousState.modeId !== nextModeId ||
-          previousState.distanceTier !== nextDistanceTier;
-
-        if (!changed) {
           return;
         }
 
@@ -74,22 +63,27 @@
           eligible: Boolean(decision?.eligible),
           optimize: Boolean(decision?.optimize),
           keepAlive: Boolean(decision?.keepAlive),
-          modeId: nextModeId,
-          distanceTier: nextDistanceTier,
+          modeId: decision?.modeState?.modeId || "",
+          distanceTier: decision?.modeState?.distanceTier || "",
         });
       };
       const queueStyleTask = (record, decision, previousState) => {
+        if (!this.shouldQueueRecordStyleTask(record, decision)) {
+          return;
+        }
+
         decisionState.styleTasks.push({
           record,
           decision,
           previousOptimized: Boolean(previousState.optimized),
         });
-        captureDecisionRecord(record, decision, previousState);
+        captureDecisionRecord(record, decision);
       };
       const performanceDecisionMetrics =
         this.state.runtime.effectiveMode === "performance"
           ? createEmptyPerformanceDecisionMetrics()
           : null;
+      const isPerformanceMode = this.state.runtime.effectiveMode === "performance";
 
       if (Array.isArray(modeEvaluationOrder)) {
         modeEvaluationOrder.forEach((recordIndex) => {
@@ -172,6 +166,7 @@
 
           const previousTraceState = {
             optimized: Boolean(record.optimized),
+            keepAlive: Boolean(record.baseStyleKeepAlive),
             modeId: record.modeState?.modeId || "",
             distanceTier: record.modeState?.distanceTier || "",
           };
@@ -228,12 +223,44 @@
             records,
           });
 
+          if (isPerformanceMode) {
+            if (record.pinned) {
+              keepAliveCount += 1;
+            }
+
+            if (record.protected) {
+              protectedCount += 1;
+            }
+
+            if (record.visible) {
+              visibleCount += 1;
+            }
+
+            if (record.nearViewport) {
+              nearViewportCount += 1;
+            }
+          }
+
           const previousTraceState = {
             optimized: Boolean(record.optimized),
+            keepAlive: Boolean(record.baseStyleKeepAlive),
             modeId: record.modeState?.modeId || "",
             distanceTier: record.modeState?.distanceTier || "",
           };
           record.optimized = Boolean(decision.optimize);
+
+          if (isPerformanceMode && decision.eligible) {
+            optimizableCount += 1;
+          }
+
+          if (isPerformanceMode && record.optimized) {
+            optimizedCount += 1;
+            estimatedSkippedHeight +=
+              decision.estimatedSkippedHeight || record.lastMeasuredHeight || 0;
+            estimatedControlledNodes += Number.isFinite(decision.controlledNodeEstimate)
+              ? decision.controlledNodeEstimate
+              : record.nodeCountEstimate || 0;
+          }
 
           if (Number.isFinite(decision.anchorAdjustment)) {
             pendingAnchorAdjustment += decision.anchorAdjustment;
@@ -249,16 +276,18 @@
           this.updateBaseMetricsContribution(record, decision);
         }
 
-        const baseMetrics = this.state.measurement.baseMetricsTotals;
+        if (!isPerformanceMode) {
+          const baseMetrics = this.state.measurement.baseMetricsTotals;
 
-        keepAliveCount = baseMetrics.keepAlive;
-        protectedCount = baseMetrics.protected;
-        visibleCount = baseMetrics.visible;
-        nearViewportCount = baseMetrics.nearViewport;
-        optimizableCount = baseMetrics.optimizable;
-        optimizedCount = baseMetrics.optimized;
-        estimatedSkippedHeight = baseMetrics.estimatedSkippedHeight;
-        estimatedControlledNodes = baseMetrics.estimatedControlledNodes;
+          keepAliveCount = baseMetrics.keepAlive;
+          protectedCount = baseMetrics.protected;
+          visibleCount = baseMetrics.visible;
+          nearViewportCount = baseMetrics.nearViewport;
+          optimizableCount = baseMetrics.optimizable;
+          optimizedCount = baseMetrics.optimized;
+          estimatedSkippedHeight = baseMetrics.estimatedSkippedHeight;
+          estimatedControlledNodes = baseMetrics.estimatedControlledNodes;
+        }
       }
 
       metricsState.keepAliveCount = keepAliveCount;

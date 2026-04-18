@@ -4,6 +4,7 @@
 
   app.runtime.protectionControllerMethods = {
     resetTrackedMessages() {
+      this.clearStreamingContentSync();
       this.clearLowPrioritySync();
       this.resetBaseRuntimeTracking();
 
