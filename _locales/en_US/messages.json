@@ -840,7 +840,7 @@
     "message": "ChatGPT Stabilizer Pro"
   },
   "appDesc": {
-    "message": "Improves the smoothness and stability of very long ChatGPT conversations with offscreen rendering optimization and distant conversation folding."
+    "message": "Improves long ChatGPT conversations with smoother scrolling, better stability, offscreen optimization, and history folding."
   },
   "syncReasons_interaction": {
     "message": "Interaction protection"
