@@ -2,142 +2,173 @@
 
 ## ChatGPT Stabilizer Pro
 
-ChatGPT Stabilizer Pro is a browser extension designed to improve the stability and responsiveness of very long ChatGPT conversations.
-
-This extension focuses on optimizing page performance while keeping the original ChatGPT page behavior intact.
+This policy describes what ChatGPT Stabilizer Pro can access on the page, what it stores locally, and what can leave the browser only when the user explicitly copies or exports data.
 
 ---
 
 # English Version
 
-## Overview
+## 1. Local-Only Operation
 
-ChatGPT Stabilizer Pro operates entirely inside the user's browser and does not transmit user data to any external servers.
-
-The extension processes certain information from the currently open ChatGPT page in order to:
-
-- recognize conversation structure
-- measure content layout
-- detect offscreen content
-- optimize long conversation rendering
-- provide local diagnostics and debug tools
-
-All processing occurs locally in the browser.
-
----
-
-## Data Access
-
-To perform its functionality, the extension may read limited information from ChatGPT web pages, including:
-
-- page metadata (such as page title and URL path, which may include a ChatGPT conversation identifier)
-- structural summaries of DOM elements
-- message container attributes
-- limited text snippets from nearby rendered elements (truncated to short lengths)
-- user interaction metadata (clicks, focus events, selection events, key names, modifier keys, etc.)
-- page structure changes detected through MutationObserver
-
-This information is used solely for page optimization and debugging purposes.
-
----
-
-## Keyboard and Input Data
-
-The extension does **not read or store the full value typed into input fields**.
-
-For debugging purposes, the extension may record limited input-related metadata, such as input type, key names, modifier keys, and the length of text in a field. Debug logs may also include short, truncated snippets from nearby page elements that are already rendered on the page.
-
-Users should review exported logs before sharing them, especially if debug recording was enabled while typing sensitive information.
-
----
-
-## Local Processing
-
-All diagnostic data and runtime information are processed **locally within the user's browser**.
+ChatGPT Stabilizer Pro runs entirely inside the user's browser on supported ChatGPT pages.
 
 The extension:
 
 - does not send data to external servers
+- does not use analytics or tracking services
+- does not use remote logging
 - does not upload conversation content
-- does not collect analytics
-- does not track users
+
+All optimization, diagnostics, and debug processing happens locally in the browser.
 
 ---
 
-## Debug Logs
+## 2. What the Extension May Access on the Page
 
-The extension provides optional debugging tools that can generate debug logs.
+To recognize ChatGPT conversations, measure layout, apply optimization, and support diagnostics, the extension may access limited page data such as:
 
-These logs may include:
+- route and page state, including the current pathname, search, hash, and page-recognition status
+- DOM structure and element attributes used for recognition and optimization, such as `data-testid`, `data-turn-id`, `data-message-id`, `data-message-author-role`, `role`, visibility-related attributes, and layout geometry
+- page structure changes detected through `MutationObserver`
+- limited interaction metadata during optional debug recording, such as clicks, pointer/button type, focus/selection changes, key names, modifier keys, input type, and input length
+- limited text-derived runtime signals used to estimate content complexity or derive in-memory fallback identifiers when the page does not provide stable message identifiers
+
+The extension may transiently inspect page text nodes during local runtime analysis. However, it does not intentionally persist raw conversation text to extension storage, and redacted debug JSON exports do not intentionally include raw conversation text.
+
+---
+
+## 3. Diagnostics Snapshots
+
+The control panel can generate a plain-text diagnostics snapshot when the user manually clicks the copy action.
+
+A diagnostics snapshot may include:
+
+- current runtime status
+- selected mode and effective mode
+- current page pathname
+- page-recognition status
+- message and optimization counts
+- fallback, recovery, and debug counters
+
+Diagnostics snapshots are generated locally and are not uploaded automatically. If the user copies one, it is placed on the system clipboard by explicit user action.
+
+---
+
+## 4. Debug Recording and Redacted Exports
+
+The extension provides an optional debug recorder for troubleshooting.
+
+Debug entries may include:
 
 - structural summaries of page elements
-- truncated text snippets near interaction targets
-- extension runtime events
-- page structure change summaries
-- keyboard and input metadata, such as key names, modifier keys, input type, and input length
+- local DOM identifiers such as `id`, `data-testid`, role metadata, and DOM path signatures
+- page-structure change summaries
+- extension sync, pipeline, fallback/recovery, mode-decision, and style-write summaries
+- limited keyboard and input metadata such as key names, modifier keys, input type, and input length
+- route, path, turn, and message identifiers represented as per-export salted hashes
 
-Debug log entries are kept in browser memory by default. They are saved outside the extension only if the user copies them or exports them as a JSON file.
+Debug JSON exports use `schemaVersion: 2` and `privacyMode: "redacted"`.
 
-The extension may store the debug recording state locally so recording can resume after a page reload.
+Redacted exports do not intentionally include:
+
+- raw page pathname or full route string
+- raw turn IDs or message IDs
+- element `textContent`
+- element `aria-label` text
+- element `title` text
+- page-title text
+
+Debug entries are kept in browser memory by default. They leave the browser only if the user explicitly copies the JSON or exports it as a file.
+
+While debug recording is active:
+
+- the panel and compact badge display a red warning-style recording state
+- debug JSON copy and export are disabled until recording stops
+
+If the debug log reaches its maximum entry limit, the extension stops recording automatically, records the stop reason, and preserves the earliest entries instead of discarding the beginning of the log.
+
+The extension may store the debug-recording flag locally so recording can resume after a page reload.
 
 ---
 
-## Data Export
+## 5. Local Storage
 
-Users may manually export debug logs as JSON files for troubleshooting purposes.
+The extension stores a small set of settings locally, such as:
 
-Exporting debug logs is always **explicitly initiated by the user**.
+- selected optimization level
+- panel open/hidden state
+- panel position and size
+- active panel tab
+- panel theme
+- debug-recording on/off state
 
-Before sharing exported logs publicly, users should review them carefully because they may contain limited page information or text fragments from the current page.
+These settings are stored in:
+
+- extension local storage (`storage.local`)
+- a same-page `window.localStorage` mirror used for local state hydration in the content script
+
+By default, the extension does not persist conversation content or full debug entry history to local storage.
 
 ---
 
-## Data Storage
+## 6. Clipboard and File Export
 
-The extension uses browser local storage and extension local storage for configuration and runtime settings, such as the selected optimization level, panel position, panel theme, and debug recording state.
+Data leaves the running page only through explicit user actions.
 
-The extension does not persist conversation content or debug log entries unless the user manually exports them. Exported files remain wherever the user chooses to save them.
+Examples:
+
+- copying a diagnostics snapshot to the system clipboard
+- copying a redacted debug JSON export to the system clipboard
+- exporting a redacted debug JSON file to a user-chosen location
+
+Before sharing copied or exported data, users should review it carefully. Even in redacted form, diagnostics snapshots and debug logs may still contain current page path information, runtime state, key names, input lengths, local DOM identifiers, structural summaries, and hashed correlation IDs.
 
 ---
 
-## Data Deletion
+## 7. No Third-Party Communication
 
-Users can remove locally stored data at any time by:
+ChatGPT Stabilizer Pro does not communicate with third-party services or APIs.
 
-- clearing debug logs in the extension panel
+The codebase does not use:
+
+- remote analytics
+- advertising or tracking SDKs
+- remote error collection
+- outbound network requests for extension telemetry
+
+---
+
+## 8. Permissions and Site Scope
+
+The extension requests only the following browser permission:
+
+`storage`
+
+This permission is used only for local settings persistence.
+
+Content scripts run only on:
+
+- `https://chat.openai.com/*`
+- `https://chatgpt.com/*`
+
+---
+
+## 9. User Controls and Data Deletion
+
+Users can remove locally retained extension data at any time by:
+
+- clearing debug logs in the control panel
 - stopping debug recording
-- deleting any exported JSON files
-- clearing the extension's local storage in the browser
+- deleting exported JSON files
+- clearing the extension's local storage
+- clearing the same-page local storage entries created by the extension
 - uninstalling the extension
 
 ---
 
-## Third-Party Services
+## 10. Policy Updates
 
-ChatGPT Stabilizer Pro does **not communicate with any external services or APIs**.
-
-It does not use analytics platforms, tracking scripts, or remote logging services.
-
----
-
-## Permissions
-
-The extension only requests the following browser permission:
-
-`storage`
-
-This permission is used only for saving extension settings locally.
-
-Content scripts run only on the following domains:
-
-- https://chat.openai.com/*
-- https://chatgpt.com/*
-
----
-
-## Changes to This Policy
-
-This privacy policy may be updated if the extension introduces new features or changes how data is processed.
+This policy may be updated if the extension changes how it processes local data.
 
 Updates will be reflected in this document.
 
@@ -145,135 +176,166 @@ Updates will be reflected in this document.
 
 # 中文版本
 
-## 概述
+## 1. 本地运行原则
 
-ChatGPT Stabilizer Pro 是一个用于优化超长 ChatGPT 对话页面性能的浏览器扩展。
-
-本扩展所有功能均在用户浏览器本地运行，不会向任何外部服务器发送数据。
-
-扩展会读取当前 ChatGPT 页面中的部分信息，用于：
-
-- 识别对话结构
-- 测量页面布局
-- 判断离屏内容
-- 优化长对话渲染性能
-- 提供本地诊断与调试工具
-
-所有处理均在浏览器本地完成。
-
----
-
-## 数据访问
-
-为了实现上述功能，扩展可能读取 ChatGPT 页面中的部分信息，包括：
-
-- 页面标题和 URL 路径等页面元信息（URL 路径可能包含 ChatGPT 对话标识）
-- DOM 元素结构摘要
-- 消息容器相关属性
-- 附近已显示元素的少量文本摘要（会进行长度截断）
-- 用户交互元信息（点击、聚焦、选择、按键名称、修饰键等事件信息）
-- 通过 MutationObserver 检测到的页面结构变化
-
-这些信息仅用于页面优化与调试分析。
-
----
-
-## 键盘与输入数据
-
-本扩展 **不会读取或保存输入框里的完整输入值**。
-
-在某些调试场景中，扩展可能记录与输入相关的有限元信息，例如输入类型、按键名称、修饰键状态和输入长度。调试记录也可能包含页面上已经显示出来的附近元素短文本摘要。
-
-如果在输入敏感信息时开启了调试记录，请在分享导出的文件前仔细检查内容。
-
----
-
-## 本地处理
-
-所有运行数据和诊断信息均在浏览器本地处理。
+ChatGPT Stabilizer Pro 仅在用户本地浏览器中的受支持 ChatGPT 页面内运行。
 
 本扩展：
 
-- 不向任何服务器发送数据
-- 不上传聊天内容
-- 不收集统计信息
-- 不进行用户追踪
+- 不会向任何外部服务器发送数据
+- 不会使用统计分析或追踪服务
+- 不会使用远程日志服务
+- 不会上传聊天内容
+
+所有优化、诊断和调试处理均在浏览器本地完成。
 
 ---
 
-## 调试记录
+## 2. 扩展在页面中可能访问的信息
 
-扩展提供可选的调试记录功能，用于排查页面问题。
+为了识别 ChatGPT 对话结构、测量布局、执行本地优化并提供诊断能力，扩展可能访问以下有限页面信息：
+
+- 路由和页面状态，例如当前 `pathname`、`search`、`hash` 以及页面识别状态
+- 用于识别和优化的 DOM 结构与元素属性，例如 `data-testid`、`data-turn-id`、`data-message-id`、`data-message-author-role`、`role`、可见性相关属性和布局几何信息
+- 通过 `MutationObserver` 检测到的页面结构变化
+- 可选调试记录期间的有限交互元信息，例如点击、指针/按钮信息、焦点/选择变化、按键名称、修饰键、输入类型和输入长度
+- 在页面未提供稳定消息标识时，用于估算内容复杂度或生成仅驻留内存的后备标识的有限文本派生信号
+
+扩展在本地运行分析过程中，可能会临时检查页面文本节点。但扩展不会有意将原始聊天正文持久保存到扩展存储中，脱敏后的调试 JSON 导出也不会有意包含原始聊天正文。
+
+---
+
+## 3. 诊断快照
+
+控制面板支持在用户手动点击复制操作时生成纯文本诊断快照。
+
+诊断快照可能包含：
+
+- 当前运行状态
+- 当前选择档位和实际生效档位
+- 当前页面路径
+- 页面识别状态
+- 消息与优化统计
+- 降级、恢复和调试计数信息
+
+诊断快照仅在本地生成，不会自动上传。只有当用户主动复制时，相关文本才会写入系统剪贴板。
+
+---
+
+## 4. 调试记录与脱敏导出
+
+扩展提供可选的调试记录功能，用于问题排查。
 
 调试记录可能包含：
 
-- 页面结构摘要
-- 交互目标附近的短文本摘要
-- 扩展运行事件
-- 页面结构变化记录
-- 按键名称、修饰键状态、输入类型、输入长度等键盘与输入元信息
+- 页面元素结构摘要
+- 本地 DOM 标识信息，例如 `id`、`data-testid`、角色元信息和 DOM 路径签名
+- 页面结构变化摘要
+- 插件同步、pipeline 阶段、降级/恢复、模式决策和样式写入摘要
+- 有限的键盘与输入元信息，例如按键名称、修饰键、输入类型和输入长度
+- 以“按次导出加盐哈希”形式表示的 route、path、turn、message 标识
 
-调试记录默认仅保存在浏览器运行时内存中。只有在用户主动复制或导出 JSON 文件时，才会保存到扩展之外。
+调试 JSON 导出使用 `schemaVersion: 2` 和 `privacyMode: "redacted"`。
 
-扩展可能会在本地保存调试记录开关状态，以便页面刷新后恢复记录状态。
+脱敏导出不会有意包含：
+
+- 原始页面路径或完整路由字符串
+- 原始 turn ID 或 message ID
+- 元素 `textContent`
+- 元素 `aria-label` 文本
+- 元素 `title` 文本
+- 页面标题文本
+
+调试记录默认只保存在浏览器运行时内存中。只有在用户主动复制 JSON 或导出文件时，它们才会离开当前浏览器运行环境。
+
+调试进行时：
+
+- 面板和折叠徽标会显示红色警示状态
+- 调试 JSON 的复制和导出会被禁用，必须先停止调试
+
+如果调试记录达到最大条目上限，扩展会自动停止记录、记录停止原因，并保留最早的记录内容，而不是滚动覆盖开头。
+
+扩展可能会在本地保存“是否正在调试”的开关状态，以便页面刷新后恢复调试状态。
 
 ---
 
-## 数据导出
+## 5. 本地存储
 
-用户可以在需要时手动导出调试记录 JSON 文件。
+扩展会在本地保存少量配置与界面状态，例如：
 
-数据导出 **始终由用户主动触发**。
+- 当前优化档位
+- 面板展开/隐藏状态
+- 面板位置和尺寸
+- 当前面板标签页
+- 面板主题
+- 调试记录开关状态
 
-在公开分享或提交问题前，请仔细检查导出的文件，避免包含个人对话或敏感信息。
+这些设置会保存在：
+
+- 扩展本地存储 `storage.local`
+- 内容脚本用于本地状态恢复的同页 `window.localStorage` 镜像
+
+默认情况下，扩展不会把聊天正文或完整调试记录历史持久保存到本地存储中。
 
 ---
 
-## 数据存储
+## 6. 剪贴板与文件导出
 
-扩展会使用浏览器本地存储和扩展本地存储保存配置与运行状态，例如优化档位、面板位置、面板主题和调试记录开关状态。
+数据只有在用户明确操作时，才会离开当前页面运行环境。
 
-扩展不会持久保存聊天内容或调试记录正文，除非用户主动导出文件。导出的文件会保存在用户选择的位置。
+例如：
+
+- 手动复制诊断快照到系统剪贴板
+- 手动复制脱敏调试 JSON 到系统剪贴板
+- 手动导出脱敏调试 JSON 文件到用户选择的位置
+
+在对外分享复制内容或导出文件前，用户应仔细检查内容。即便已经脱敏，诊断快照和调试记录仍可能包含当前页面路径、运行状态、按键名称、输入长度、本地 DOM 标识、结构摘要以及哈希关联 ID 等上下文信息。
 
 ---
 
-## 数据删除
+## 7. 无第三方通信
 
-用户可以随时通过以下方式删除本地数据：
+ChatGPT Stabilizer Pro 不会连接任何第三方服务或 API。
 
-- 在扩展面板中清空调试记录
+代码中不使用：
+
+- 远程统计分析
+- 广告或追踪 SDK
+- 远程错误收集
+- 面向扩展遥测的外发网络请求
+
+---
+
+## 8. 权限与运行范围
+
+扩展仅申请以下浏览器权限：
+
+`storage`
+
+该权限仅用于本地保存扩展设置。
+
+内容脚本仅运行在：
+
+- `https://chat.openai.com/*`
+- `https://chatgpt.com/*`
+
+---
+
+## 9. 用户控制与数据删除
+
+用户可以随时通过以下方式删除扩展在本地保留的数据：
+
+- 在控制面板中清空调试记录
 - 停止调试记录
 - 删除已经导出的 JSON 文件
-- 在浏览器中清除扩展本地存储
+- 清除扩展本地存储
+- 清除扩展写入的同页 `localStorage` 项
 - 卸载扩展
 
 ---
 
-## 第三方服务
+## 10. 政策更新
 
-ChatGPT Stabilizer Pro **不会连接任何第三方服务器或 API**。
+如果扩展未来对本地数据处理方式做出调整，本隐私政策也会同步更新。
 
-扩展不会使用分析平台、追踪脚本或远程日志服务。
-
----
-
-## 权限说明
-
-扩展仅请求以下浏览器权限：
-
-`storage`
-
-该权限仅用于保存本地配置。
-
-内容脚本仅在以下域名运行：
-
-- https://chat.openai.com/*
-- https://chatgpt.com/*
-
----
-
-## 政策更新
-
-如果扩展未来功能发生变化，本隐私政策可能会进行更新。
-
-所有更新将体现在本文件中。
+所有更新都会体现在本文件中。

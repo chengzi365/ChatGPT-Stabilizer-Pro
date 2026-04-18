@@ -3,14 +3,39 @@
 
   app.runtime.traceRecorderExportMethods = {
     exportPayload() {
+      if (typeof this.flushPendingStyleBatch === "function") {
+        this.flushPendingStyleBatch();
+      }
+
+      const runtimeState = this.controller?.state?.runtime || {};
+      const routeSummary =
+        typeof this.buildRouteSummary === "function"
+          ? this.buildRouteSummary(globalThis.location, app.dom.findChatRoot())
+          : {};
+
       return {
         appName: "ChatGPT Stabilizer Pro",
         version: app.version,
+        schemaVersion: 2,
+        privacyMode: "redacted",
+        redaction: {
+          removedFields: [
+            "snapshot.title",
+            "snapshot.path",
+            "element.text",
+            "element.ariaLabel",
+            "element.title",
+            "raw turnId",
+            "raw messageId",
+          ],
+          idStrategy: "per-export salted hash",
+        },
         exportedAt: new Date().toISOString(),
-        routeKey: this.controller.getRouteKey(),
-        level: this.controller.state.level,
-        targetMode: this.controller.state.targetMode,
-        effectiveMode: this.controller.state.effectiveMode,
+        traceSessionId: this.runtime.traceSessionId || "",
+        route: routeSummary,
+        level: runtimeState.level || "",
+        targetMode: runtimeState.targetMode || "",
+        effectiveMode: runtimeState.effectiveMode || "",
         trace: {
           ...this.getDiagnosticsState(),
           entrySampleCount: this.runtime.entries.length,
@@ -29,6 +54,10 @@
       return {
         recording: this.runtime.recording,
         entryCount: this.runtime.entries.length,
+        entryLimit: this.getTraceLimits().hardLimit,
+        captureLimit: this.getTraceLimits().captureLimit,
+        entryLimitReached: Boolean(this.runtime.entryLimitReached),
+        stopReason: this.runtime.stopReason || "",
         domEventCount: this.runtime.domEventCount,
         mutationBatchCount: this.runtime.mutationBatchCount,
         snapshotCount: this.runtime.snapshotCount,
@@ -38,6 +67,7 @@
         lastUpdatedAt: this.runtime.lastUpdatedAt,
         lastKind: this.runtime.lastKind,
         lastType: this.runtime.lastType,
+        traceSessionId: this.runtime.traceSessionId || "",
       };
     },
 

@@ -123,9 +123,11 @@
 
     trace: {
       maxEntries: 5000,
+      stopReserveEntries: 2,
       tailTurnCount: 10,
       maxMutationSamples: 12,
       maxTurnDiffIds: 24,
+      maxStyleBatchSamples: 12,
     },
 
     protection: {

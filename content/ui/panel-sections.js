@@ -80,6 +80,24 @@
     return t("common.none");
   }
 
+  function formatTraceStopReason(trace = {}) {
+    if (trace.entryLimitReached && trace.stopReason === "max-entries-reached") {
+      return t(
+        "panel.trace.stoppedByLimit",
+        {
+          maxEntries: formatNumber(trace.entryLimit || 0),
+        },
+        "Stopped after reaching the debug entry limit"
+      );
+    }
+
+    if (!trace.stopReason) {
+      return t("common.none");
+    }
+
+    return trace.stopReason;
+  }
+
   function formatTimestamp(timestamp) {
     if (!Number.isFinite(timestamp) || timestamp <= 0) {
       return t("common.none");
@@ -148,6 +166,11 @@
       if (this.shouldRenderSection("summary")) {
         this.renderSummary(state, metrics);
         this.finishRenderSection("summary");
+      }
+
+      if (this.shouldRenderSection("debugBanner")) {
+        this.renderDebugBanner(state.traceStatus || state.trace || {});
+        this.finishRenderSection("debugBanner");
       }
 
       if (this.shouldRenderSection("stats")) {
@@ -527,6 +550,38 @@
       );
     },
 
+    renderDebugBanner(trace) {
+      const banner = this.elements.debugBanner;
+      const traceRecording = Boolean(trace?.recording);
+
+      if (!banner) {
+        return;
+      }
+
+      banner.dataset.active = String(traceRecording);
+
+      this.setCachedHtml(
+        "debug-banner",
+        banner,
+        traceRecording
+          ? `
+<div class="debug-banner-dot" aria-hidden="true"></div>
+<div class="debug-banner-copy">
+  <div class="debug-banner-title">${escapeHtml(
+    t("panel.trace.active", {}, "Debug active")
+  )}</div>
+  <div class="debug-banner-body">${escapeHtml(
+    t(
+      "panel.trace.activeHint",
+      {},
+      "Structured debug data is being recorded. Stop debugging before copying or exporting."
+    )
+  )}</div>
+</div>`
+          : ""
+      );
+    },
+
     renderStats(metrics) {
       const cards = [
         [t("panel.messages.total"), formatNumber(metrics.messageTotal)],
@@ -552,11 +607,11 @@
 
     renderTabs() {
       const tabs = [
-        ["overview", t("panel.tabs.overview", {}, "Overview")],
-        ["mode", t("panel.sections.mode", {}, "Mode")],
-        ["messages", t("panel.sections.messages", {}, "Messages")],
-        ["performance", t("panel.sections.performance", {}, "Performance")],
-        ["events", t("panel.sections.events", {}, "Events")],
+        ["overview", t("panel.tabs.overview", {}, "Overview"), t("panel.tabs.overview", {}, "Overview")],
+        ["mode", t("panel.tabs.mode", {}, "Mode"), t("panel.sections.mode", {}, "Optimization Level")],
+        ["messages", t("panel.tabs.messages", {}, "Stats"), t("panel.sections.messages", {}, "Chat Stats")],
+        ["performance", t("panel.tabs.performance", {}, "Perf"), t("panel.sections.performance", {}, "Performance Metrics")],
+        ["events", t("panel.tabs.events", {}, "Events"), t("panel.sections.events", {}, "Recent Events")],
       ];
 
       this.setCachedHtml(
@@ -564,8 +619,8 @@
         this.elements.tabStrip,
         tabs
           .map(
-            ([id, label]) => `
-<button class="tab-btn" type="button" data-tab="${escapeHtml(id)}" data-active="${
+            ([id, label, title]) => `
+<button class="tab-btn" type="button" data-tab="${escapeHtml(id)}" title="${escapeHtml(title)}" data-active="${
             this.activeTab === id
           }">${escapeHtml(label)}</button>`
           )
@@ -632,69 +687,107 @@
 
     renderTraceState(state) {
       const trace = state.trace || {};
+      const traceAvailable = state.level !== "off";
+      const traceRecording = Boolean(trace.recording);
+      const hasTraceEntries = Boolean(trace.entryCount);
       const toggleButton = this.elements.traceToggle;
       const exportButton = this.elements.traceExport;
       const copyButton = this.elements.traceCopy;
       const clearButton = this.elements.traceClear;
+      const traceSummaryRows = [
+        [
+          t("panel.trace.recording", {}, "Recording"),
+          formatEnabled(Boolean(trace.recording)),
+        ],
+        [
+          t("panel.trace.entries", {}, "Entries"),
+          formatNumber(trace.entryCount || 0),
+        ],
+        [
+          t("panel.trace.domEvents", {}, "DOM events"),
+          formatNumber(trace.domEventCount || 0),
+        ],
+        [
+          t("panel.trace.mutations", {}, "Mutation batches"),
+          formatNumber(trace.mutationBatchCount || 0),
+        ],
+        [
+          t("panel.trace.snapshots", {}, "Snapshots"),
+          formatNumber(trace.snapshotCount || 0),
+        ],
+        [
+          t("panel.trace.syncSamples", {}, "Sync samples"),
+          formatNumber(trace.syncEventCount || 0),
+        ],
+        [
+          t("panel.trace.styleWrites", {}, "Style writes"),
+          formatNumber(trace.styleWriteCount || 0),
+        ],
+        [
+          t("panel.trace.startedAt", {}, "Started at"),
+          formatTimestamp(trace.startedAt),
+        ],
+        [
+          t("panel.trace.lastEntry", {}, "Last entry"),
+          formatTraceLastEntry(trace),
+        ],
+      ];
+
+      if (trace.entryLimitReached && !trace.recording) {
+        traceSummaryRows.push(
+          [
+            t("panel.trace.stopReason", {}, "Stop reason"),
+            formatTraceStopReason(trace),
+          ],
+          [
+            t("panel.trace.entryLimit", {}, "Entry limit"),
+            formatNumber(trace.entryLimit || 0),
+          ]
+        );
+      }
 
       if (this.elements.traceSummary) {
         this.renderKeyValue(
           this.elements.traceSummary,
-          [
-            [
-              t("panel.trace.recording", {}, "Recording"),
-              formatEnabled(Boolean(trace.recording)),
-            ],
-            [
-              t("panel.trace.entries", {}, "Entries"),
-              formatNumber(trace.entryCount || 0),
-            ],
-            [
-              t("panel.trace.domEvents", {}, "DOM events"),
-              formatNumber(trace.domEventCount || 0),
-            ],
-            [
-              t("panel.trace.mutations", {}, "Mutation batches"),
-              formatNumber(trace.mutationBatchCount || 0),
-            ],
-            [
-              t("panel.trace.snapshots", {}, "Snapshots"),
-              formatNumber(trace.snapshotCount || 0),
-            ],
-            [
-              t("panel.trace.syncSamples", {}, "Sync samples"),
-              formatNumber(trace.syncEventCount || 0),
-            ],
-            [
-              t("panel.trace.styleWrites", {}, "Style writes"),
-              formatNumber(trace.styleWriteCount || 0),
-            ],
-            [
-              t("panel.trace.startedAt", {}, "Started at"),
-              formatTimestamp(trace.startedAt),
-            ],
-            [
-              t("panel.trace.lastEntry", {}, "Last entry"),
-              formatTraceLastEntry(trace),
-            ],
-          ],
+          traceSummaryRows,
           "trace-summary"
         );
       }
 
       if (toggleButton) {
         toggleButton.dataset.recording = String(Boolean(trace.recording));
+        toggleButton.disabled = !traceAvailable;
+        toggleButton.title = !traceAvailable
+          ? t("panel.trace.unavailable", {}, "Debug unavailable")
+          : trace.entryLimitReached && !trace.recording
+          ? t(
+              "panel.trace.stoppedByLimitHint",
+              {
+                maxEntries: formatNumber(trace.entryLimit || 0),
+              },
+              "The debug log reached the {maxEntries} entry limit. Earliest entries were preserved and the log is ready to export."
+            )
+          : "";
         this.setCachedText(
           "trace-toggle",
           toggleButton,
-          trace.recording
-            ? t("panel.trace.stop", {}, "Stop trace")
-            : t("panel.trace.start", {}, "Start trace")
+          !traceAvailable
+            ? t("panel.trace.unavailable", {}, "Debug unavailable")
+            : trace.recording
+            ? t("panel.trace.stop", {}, "Stop debugging")
+            : t("panel.trace.start", {}, "Start debugging")
         );
       }
 
       if (exportButton) {
-        exportButton.disabled = !trace.entryCount;
+        exportButton.disabled = traceRecording || !hasTraceEntries;
+        exportButton.title = traceRecording
+          ? t(
+              "panel.trace.exportDisabledWhileRecording",
+              {},
+              "Debugging is active. Stop debugging before exporting JSON."
+            )
+          : "";
         this.setCachedText(
           "trace-export",
           exportButton,
@@ -703,7 +796,14 @@
       }
 
       if (copyButton) {
-        copyButton.disabled = !trace.entryCount;
+        copyButton.disabled = traceRecording || !hasTraceEntries;
+        copyButton.title = traceRecording
+          ? t(
+              "panel.trace.copyDisabledWhileRecording",
+              {},
+              "Debugging is active. Stop debugging before copying JSON."
+            )
+          : "";
         this.setCachedText(
           "trace-copy",
           copyButton,
@@ -716,7 +816,7 @@
         this.setCachedText(
           "trace-clear",
           clearButton,
-          t("panel.trace.clear", {}, "Clear trace")
+          t("panel.trace.clear", {}, "Clear debug log")
         );
       }
     },

@@ -168,7 +168,7 @@
     "message": "Off"
   },
   "levels_off_description": {
-    "message": "不启用任何内容接管或优化写入，只保留状态统计和面板能力。"
+    "message": "关闭全部优化、统计、诊断、事件和调试记录，仅保留控制面板本身可操作。"
   },
   "levels_off_risk": {
     "message": "不影响任何原生功能。"
@@ -177,7 +177,7 @@
     "message": "Monitor"
   },
   "levels_monitor_description": {
-    "message": "启用识别、统计、诊断与追踪链路，但不对消息内容执行优化接管。"
+    "message": "关闭页面优化，保留页面识别、消息统计、诊断、事件和调试记录。"
   },
   "levels_monitor_risk": {
     "message": "不影响任何原生功能。"
@@ -257,6 +257,9 @@
   "panel_badgeSummary": {
     "message": "{messages} 条消息 | 优化内容块 {optimized} | 优化率 {coverage}"
   },
+  "panel_badgeSummaryCompact": {
+    "message": "消息 {messages} | 优化块 {optimized} | 优化率 {coverage}"
+  },
   "panel_eventMeta": {
     "message": "{time} | {type}"
   },
@@ -334,6 +337,18 @@
   },
   "panel_tabs_overview": {
     "message": "总览"
+  },
+  "panel_tabs_mode": {
+    "message": "等级"
+  },
+  "panel_tabs_messages": {
+    "message": "统计"
+  },
+  "panel_tabs_performance": {
+    "message": "性能"
+  },
+  "panel_tabs_events": {
+    "message": "事件"
   },
   "panel_runtime_status": {
     "message": "状态"
@@ -530,6 +545,9 @@
   "panel_trace_entries": {
     "message": "记录条数"
   },
+  "panel_trace_entryLimit": {
+    "message": "记录上限"
+  },
   "panel_trace_domEvents": {
     "message": "DOM 事件"
   },
@@ -551,8 +569,14 @@
   "panel_trace_lastEntry": {
     "message": "最后记录"
   },
+  "panel_trace_stopReason": {
+    "message": "停止原因"
+  },
   "panel_trace_recorded": {
     "message": "已记录"
+  },
+  "panel_trace_unavailable": {
+    "message": "调试不可用"
   },
   "panel_trace_start": {
     "message": "开始调试"
@@ -560,11 +584,35 @@
   "panel_trace_stop": {
     "message": "停止调试"
   },
+  "panel_trace_active": {
+    "message": "调试进行中"
+  },
+  "panel_trace_activeHint": {
+    "message": "正在记录结构化调试信息。停止调试后即可复制或导出。"
+  },
+  "panel_trace_activeBadge": {
+    "message": "调试进行中"
+  },
+  "panel_trace_stoppedByLimit": {
+    "message": "已达到最大记录值并停止调试"
+  },
+  "panel_trace_stoppedByLimitHint": {
+    "message": "已达到 {maxEntries} 条记录上限。最早记录已保留，现在可以直接导出。"
+  },
+  "panel_trace_stoppedByLimitBadge": {
+    "message": "调试已达上限"
+  },
   "panel_trace_export": {
     "message": "导出 JSON"
   },
+  "panel_trace_exportDisabledWhileRecording": {
+    "message": "调试进行中，请先停止调试后再导出 JSON。"
+  },
   "panel_trace_copy": {
     "message": "复制 JSON"
+  },
+  "panel_trace_copyDisabledWhileRecording": {
+    "message": "调试进行中，请先停止调试后再复制 JSON。"
   },
   "panel_trace_clear": {
     "message": "清空调试"
@@ -606,7 +654,7 @@
     "message": "文章回退适配器"
   },
   "panel_traceKind_trace": {
-    "message": "追踪"
+    "message": "调试"
   },
   "panel_traceKind_dom_event": {
     "message": "DOM 事件"
@@ -739,6 +787,15 @@
   },
   "events_copyDiagnosticsFailure": {
     "message": "复制诊断快照失败。"
+  },
+  "events_traceExportBlockedWhileRecording": {
+    "message": "调试进行中，需先停止调试后才能导出 JSON。"
+  },
+  "events_traceCopyBlockedWhileRecording": {
+    "message": "调试进行中，需先停止调试后才能复制 JSON。"
+  },
+  "events_traceMaxEntriesReached": {
+    "message": "调试已达到 {maxEntries} 条记录上限，已自动停止并完成收尾。"
   },
   "events_levelUnavailable": {
     "message": "{level} 在当前构建中不可用。"

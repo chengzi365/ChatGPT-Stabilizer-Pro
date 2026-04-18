@@ -5,6 +5,9 @@
   const { average, nowLabel } = app.core.utils;
   const {
     createDiagnosticsState,
+    createPanelBadgeSnapshot,
+    createPanelOverlaySnapshot,
+    createTraceStatusSnapshot,
     cloneDiagnosticsSlice,
   } = app.core.diagnosticsState;
   const {
@@ -15,6 +18,15 @@
     const sliceListeners = new Map();
     const syncSamples = [];
     const state = createDiagnosticsState();
+    const defaults = createDiagnosticsState();
+    const sliceVersions = Object.create(null);
+    const sliceSnapshotCache = Object.create(null);
+    const collectionPolicy = {
+      metricsEnabled: true,
+      sessionEnabled: true,
+      traceEnabled: true,
+      eventsEnabled: true,
+    };
     const scheduleMicrotask =
       typeof globalThis.queueMicrotask === "function"
         ? globalThis.queueMicrotask.bind(globalThis)
@@ -52,8 +64,36 @@
 
         if (sliceName) {
           dirtySlices.add(sliceName);
+          sliceVersions[sliceName] = (sliceVersions[sliceName] || 0) + 1;
+          delete sliceSnapshotCache[sliceName];
         }
       }
+    }
+
+    function getCachedSliceSnapshot(sliceName) {
+      if (!sliceName) {
+        return undefined;
+      }
+
+      const version = sliceVersions[sliceName] || 0;
+      const cachedSnapshot = sliceSnapshotCache[sliceName];
+
+      if (cachedSnapshot && cachedSnapshot.version === version) {
+        return cachedSnapshot.snapshot;
+      }
+
+      const snapshot = cloneDiagnosticsSlice(state, sliceName);
+
+      if (typeof snapshot === "undefined") {
+        return undefined;
+      }
+
+      sliceSnapshotCache[sliceName] = {
+        version,
+        snapshot,
+      };
+
+      return snapshot;
     }
 
     function flushEmit() {
@@ -81,7 +121,7 @@
           continue;
         }
 
-        const snapshot = cloneDiagnosticsSlice(state, sliceName);
+        const snapshot = getCachedSliceSnapshot(sliceName);
 
         listenerSet.forEach((listener) => {
           try {
@@ -128,7 +168,57 @@
       return changed;
     }
 
+    function resetObjectSlice(sliceName) {
+      const nextSlice = defaults[sliceName];
+      const currentSlice = state[sliceName];
+
+      if (!nextSlice || !currentSlice || typeof nextSlice !== "object") {
+        return false;
+      }
+
+      return mergeChanged(currentSlice, { ...nextSlice }, sliceName);
+    }
+
+    function resetEventsSlice() {
+      if (state.events.length === 0) {
+        return false;
+      }
+
+      state.events = [];
+      markDirty("events");
+      requestEmit();
+      return true;
+    }
+
+    function syncPanelBadgeState() {
+      return mergeChanged(
+        state.panelBadge,
+        createPanelBadgeSnapshot(state),
+        "panelBadge"
+      );
+    }
+
+    function syncPanelOverlayState() {
+      return mergeChanged(
+        state.panelOverlay,
+        createPanelOverlaySnapshot(state),
+        "panelOverlay"
+      );
+    }
+
+    function syncTraceStatusState() {
+      return mergeChanged(
+        state.traceStatus,
+        createTraceStatusSnapshot(state),
+        "traceStatus"
+      );
+    }
+
     function pushEvent(type, detailKey, level = "info", detailParams = {}) {
+      if (!collectionPolicy.eventsEnabled) {
+        return;
+      }
+
       state.events.unshift({
         time: nowLabel(),
         type,
@@ -143,7 +233,7 @@
 
     return {
       getSliceState(sliceName) {
-        return cloneDiagnosticsSlice(state, sliceName);
+        return getCachedSliceSnapshot(sliceName);
       },
 
       subscribeSlice(sliceName, listener) {
@@ -151,14 +241,16 @@
           return () => {};
         }
 
-        if (typeof cloneDiagnosticsSlice(state, sliceName) === "undefined") {
+        const initialSnapshot = getCachedSliceSnapshot(sliceName);
+
+        if (typeof initialSnapshot === "undefined") {
           listener(undefined, sliceName);
           return () => {};
         }
 
         const listenerSet = getSliceListenerSet(sliceName);
         listenerSet.add(listener);
-        listener(cloneDiagnosticsSlice(state, sliceName), sliceName);
+        listener(initialSnapshot, sliceName);
 
         return () => {
           listenerSet.delete(listener);
@@ -197,6 +289,7 @@
         }
 
         if (changed) {
+          syncPanelBadgeState();
           markDirty("modeState");
           requestEmit();
         }
@@ -208,6 +301,7 @@
         }
 
         state.runtimeStatus = status;
+        syncPanelBadgeState();
         markDirty("runtimeStatus");
         requestEmit();
       },
@@ -221,7 +315,13 @@
       },
 
       setMetrics(metrics) {
-        mergeChanged(state.metrics, metrics, "metrics");
+        if (!collectionPolicy.metricsEnabled) {
+          return;
+        }
+
+        if (mergeChanged(state.metrics, metrics, "metrics")) {
+          syncPanelBadgeState();
+        }
       },
 
       setFallbackState(fallbackState) {
@@ -229,18 +329,34 @@
       },
 
       setActivityState(activityState) {
-        mergeChanged(state.activity, activityState, "activity");
+        if (mergeChanged(state.activity, activityState, "activity")) {
+          syncPanelOverlayState();
+        }
       },
 
       setSessionState(sessionState) {
+        if (!collectionPolicy.sessionEnabled) {
+          return;
+        }
+
         mergeChanged(state.session, sessionState, "session");
       },
 
       setTraceState(traceState) {
-        mergeChanged(state.trace, traceState, "trace");
+        if (!collectionPolicy.traceEnabled) {
+          return;
+        }
+
+        if (mergeChanged(state.trace, traceState, "trace")) {
+          syncTraceStatusState();
+        }
       },
 
       setInitDuration(durationMs) {
+        if (!collectionPolicy.metricsEnabled) {
+          return;
+        }
+
         if (state.metrics.initDurationMs === durationMs) {
           return;
         }
@@ -251,6 +367,10 @@
       },
 
       recordSync({ durationMs, reason, isResync }) {
+        if (!collectionPolicy.metricsEnabled) {
+          return;
+        }
+
         syncSamples.push(durationMs);
 
         while (syncSamples.length > config.diagnostics.maxSyncSamples) {
@@ -273,11 +393,73 @@
       pushEvent,
 
       recordError(errorMessage) {
+        if (!collectionPolicy.eventsEnabled) {
+          return;
+        }
+
         state.fallback.lastError = errorMessage;
         markDirty("fallback");
         pushEvent("error", "events.runtimeError", "error", {
           message: errorMessage,
         });
+      },
+
+      setCollectionPolicy(nextPolicy = {}) {
+        const normalizedPolicy = {
+          metricsEnabled:
+            typeof nextPolicy.metricsEnabled === "boolean"
+              ? nextPolicy.metricsEnabled
+              : collectionPolicy.metricsEnabled,
+          sessionEnabled:
+            typeof nextPolicy.sessionEnabled === "boolean"
+              ? nextPolicy.sessionEnabled
+              : collectionPolicy.sessionEnabled,
+          traceEnabled:
+            typeof nextPolicy.traceEnabled === "boolean"
+              ? nextPolicy.traceEnabled
+              : collectionPolicy.traceEnabled,
+          eventsEnabled:
+            typeof nextPolicy.eventsEnabled === "boolean"
+              ? nextPolicy.eventsEnabled
+              : collectionPolicy.eventsEnabled,
+        };
+
+        const previousPolicy = { ...collectionPolicy };
+        let changed = false;
+
+        Object.keys(normalizedPolicy).forEach((key) => {
+          if (collectionPolicy[key] !== normalizedPolicy[key]) {
+            collectionPolicy[key] = normalizedPolicy[key];
+            changed = true;
+          }
+        });
+
+        if (!changed) {
+          return false;
+        }
+
+        if (previousPolicy.metricsEnabled && !collectionPolicy.metricsEnabled) {
+          syncSamples.length = 0;
+          if (resetObjectSlice("metrics")) {
+            syncPanelBadgeState();
+          }
+        }
+
+        if (previousPolicy.sessionEnabled && !collectionPolicy.sessionEnabled) {
+          resetObjectSlice("session");
+        }
+
+        if (previousPolicy.traceEnabled && !collectionPolicy.traceEnabled) {
+          if (resetObjectSlice("trace")) {
+            syncTraceStatusState();
+          }
+        }
+
+        if (previousPolicy.eventsEnabled && !collectionPolicy.eventsEnabled) {
+          resetEventsSlice();
+        }
+
+        return true;
       },
 
       buildSnapshotText() {

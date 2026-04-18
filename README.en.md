@@ -4,7 +4,7 @@
   <a href="./README.md"><strong>中文</strong></a>
 </p>
 
-ChatGPT Stabilizer Pro is a desktop browser extension for those very long ChatGPT conversations that slowly turn a smooth page into a sticky, stuttering mess. I built it to ease scrolling lag, typing delay, and tab freezes by optimizing offscreen content and folding history that sits far away from the current view, while keeping ChatGPT's native page behavior as intact as possible.
+ChatGPT Stabilizer Pro is a stable, efficient, low-interference desktop browser extension for long ChatGPT conversations. It reduces scrolling lag, typing delay, and page stalls with multi-level optimization strategies while keeping ChatGPT's native page behavior as intact as possible.
 
 ## Screenshots
 
@@ -15,7 +15,7 @@ ChatGPT Stabilizer Pro is a desktop browser extension for those very long ChatGP
 ## Features
 
 - Recognizes both `chatgpt.com` and `chat.openai.com` by default.
-- Offers `Off`, `Monitor`, `Standard`, `Performance`, and other optimization modes you can switch between as needed. More will be added later.
+- Offers four selectable modes: `Off`, `Monitor`, `Standard`, and `Performance`, plus a registered but not yet selectable planned mode: `Extreme`.
 - Adds an in-page control panel for runtime status, optimization stats, diagnostics, and manual refresh.
 - Supports local loading in desktop Chrome and Chromium-based browsers with Manifest V3.
 - Supports temporary add-on loading in desktop Firefox.
@@ -60,7 +60,7 @@ The control panel includes several everyday tabs:
 - Optimization Level: Switch between `Off`, `Monitor`, `Standard`, `Performance`, and other modes, with a short note and risk hint for each one.
 - Chat Stats: Check total messages, content block counts, observed content, optimizable content, optimized content, and the current visible range.
 - Performance Metrics: Check initialization, sync, and resync timing, plus folding, restore, and blocking stats in `Performance` mode.
-- Recent Events: Review recent extension events, and start debugging, stop debugging, copy logs, or export debug JSON when troubleshooting.
+- Recent Events: Review recent extension events, and start debugging, stop debugging, copy logs, or export redacted debug JSON when troubleshooting.
 
 ## Optimization Modes
 
@@ -68,7 +68,7 @@ The extension provides several runtime modes. For normal use, start with `Standa
 
 ### Off
 
-Turns optimization off.
+Disables all extension optimization, metrics, diagnostics, events, and debug recording. Only the control panel itself remains operable.
 
 Useful when:
 
@@ -78,13 +78,14 @@ Useful when:
 
 ### Monitor
 
-Watches only. Does not optimize.
+Disables page optimization while keeping page recognition, message stats, diagnostics, recent events, and debug recording available.
 
 Useful when:
 
 - You want to check whether page recognition is working.
 - You want message counts and diagnostics without changing page behavior.
 - You need status data while keeping the page untouched.
+- You want a no-optimization debug baseline.
 
 ### Standard
 
@@ -117,7 +118,7 @@ Notes:
 
 ### Extreme
 
-A more aggressive optimization strategy than Performance, with stronger optimization results. Coming in the next version. Stay tuned.
+A planned mode that would be more aggressive than `Performance`. It is intended for the next version and is registered in the project, but not selectable yet.
 
 ## Recommended Use
 
@@ -126,7 +127,7 @@ For everyday use:
 1. Start with `Standard`.
 2. If the conversation still feels slow, switch to `Performance`.
 3. If something looks wrong, switch to `Off` and compare.
-4. If you only want status data, use `Monitor`.
+4. If you only want status data or a no-optimization debug baseline, use `Monitor`.
 
 When a long conversation is clearly dragging:
 
@@ -153,20 +154,30 @@ The extension reads the current ChatGPT page DOM to:
 - Generate local diagnostics and debug logs.
 
 Diagnostics snapshots and debug logs are only meant to help debug local page issues.
-They are stored locally and can only be copied or exported by you.
-Before posting them publicly or attaching them to an issue, check them carefully for private conversations, personal data, account details, or anything else sensitive.
+They are stored locally. While debugging is active, the panel and compact badge show a red warning-style active-debug state, and debug JSON cannot be copied or exported until debugging is stopped.
+Debug logs use the `redacted` format by default. They do not export conversation text, page titles, raw URL paths, raw turn/message IDs, element `textContent`, `aria-label`, or `title` text.
+Before posting diagnostics or debug logs publicly, still review them carefully because they may include key names, input lengths, structural summaries, local DOM identifiers, hashed correlation IDs, and other debugging context.
 
 ## Debug Logs
 
 The `Recent Events` tab in the control panel includes debug logging. It records detailed page-structure changes so a problem can be tracked down instead of guessed at.
 
+Keep in mind:
+
+- Debugging is unavailable in `Off` mode.
+- If you want a debug baseline without optimization takeover, use `Monitor`.
+- While debugging is active, the panel and compact badge show a red warning-style active-debug state, then return to their normal state after debugging stops.
+- JSON copy and export are disabled while debugging is active. Stop debugging first.
+- If the debug log reaches its maximum entry limit, recording stops automatically and preserves the earliest entries instead of rolling over the beginning.
+
 Debug logs can record:
 
-- DOM events such as clicks, input, focus, and selection.
-- ChatGPT page-structure changes.
-- Extension sync start and end events.
-- Extension style writes.
-- Page snapshots and diffs.
+- DOM event metadata such as clicks, input, focus, and selection.
+- Limited input metadata such as key names, modifier keys, input type, and input length.
+- ChatGPT page-structure change summaries.
+- Extension sync, pipeline stage, fallback/recovery, and mode-decision events.
+- Batched summaries of extension style writes.
+- Redacted structural snapshots, diffs, and hashed correlation IDs.
 
 When you run into an unexpected issue:
 
@@ -177,7 +188,7 @@ When you run into an unexpected issue:
 5. Click `Stop debugging`.
 6. Export JSON or copy JSON manually.
 
-Note: debug logs may include page-structure summaries, short text summaries, and current page state. If you need to send them to someone else, review the files first and remove anything private or sensitive.
+Note: debug logs are exported as `schemaVersion: 2` JSON with `privacyMode: "redacted"`. They do not include conversation text or page-text summaries by default, but they may still include structured context, key names, and input lengths. Review the file before sending it to someone else.
 
 ## Reporting Issues
 
@@ -189,11 +200,11 @@ When reporting an issue, please include:
 - Current optimization mode.
 - Exact steps that triggered the issue.
 - The diagnostics snapshot from the control panel.
-- Debug log JSON if needed.
+- Debug log JSON exported after debugging has stopped, if needed.
 
-Before submitting diagnostics or debug logs, check them carefully for private conversations, personal data, account details, or anything else sensitive.
+Before submitting diagnostics or debug logs, check them carefully for any context you do not want to make public.
 
-One thing I noticed while building this: the ChatGPT web app itself has plenty of rough edges. Some problems may not come from this extension at all. If something breaks, first turn the extension fully off and try the same steps again. If the problem is still there with the extension off, it is probably something that has to be fixed on ChatGPT's side.
+The ChatGPT web app itself still has plenty of rough edges, so some problems may not come from this extension at all. If something breaks, first turn the extension fully off and try the same steps again. If the problem is still there with the extension off, it is more likely a ChatGPT-side issue that has to be fixed upstream.
 
 ## Project Structure
 

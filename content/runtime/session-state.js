@@ -127,6 +127,9 @@
       routeFollowupTimers: [],
       runtimeProfileTimer: 0,
       runtimeProfileTimerReason: "",
+      overlayJobSeq: 0,
+      activeOverlayJob: null,
+      overlayCompletionTimer: 0,
     };
   }
 

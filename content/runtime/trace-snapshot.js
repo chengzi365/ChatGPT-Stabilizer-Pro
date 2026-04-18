@@ -26,6 +26,37 @@
     return null;
   }
 
+  function isPanelElement(element) {
+    return Boolean(
+      element instanceof Element &&
+        config.panel?.hostId &&
+        element.closest(`#${config.panel.hostId}`)
+    );
+  }
+
+  function getPreferredActiveElement() {
+    const activeElement = toElement(document.activeElement);
+
+    if (!isPanelElement(activeElement)) {
+      return activeElement;
+    }
+
+    const selection = globalThis.getSelection?.();
+    const anchorElement = toElement(selection?.anchorNode || null);
+
+    if (!isPanelElement(anchorElement)) {
+      return anchorElement;
+    }
+
+    const focusElement = toElement(selection?.focusNode || null);
+
+    if (!isPanelElement(focusElement)) {
+      return focusElement;
+    }
+
+    return null;
+  }
+
   function limitText(value, maxLength = 120) {
     const compact = String(value || "").replace(/\s+/g, " ").trim();
 
@@ -46,24 +77,112 @@
     return values.slice(0, maxSize);
   }
 
-  function safeClassName(element) {
+  function roundMetric(value) {
+    return Number.isFinite(value) ? Math.round(value) : 0;
+  }
+
+  function buildTraceIdentifier(traceRecorder, prefix, primaryValue, fallbackValue = "") {
+    const value = String(primaryValue || fallbackValue || "").trim();
+
+    if (!value || !traceRecorder || typeof traceRecorder.hashTraceValue !== "function") {
+      return "";
+    }
+
+    return traceRecorder.hashTraceValue(prefix, value);
+  }
+
+  function collectClassFlags(element) {
+    if (!(element instanceof Element) || !element.classList) {
+      return [];
+    }
+
+    const flags = [];
+
+    element.classList.forEach((token) => {
+      if (/^csp-/.test(token) && flags.length < 8) {
+        flags.push(token);
+      }
+    });
+
+    return flags;
+  }
+
+  function summarizeRect(element) {
+    if (!(element instanceof Element) || typeof element.getBoundingClientRect !== "function") {
+      return null;
+    }
+
+    const rect = element.getBoundingClientRect();
+
+    return {
+      width: roundMetric(rect.width),
+      height: roundMetric(rect.height),
+      top: roundMetric(rect.top),
+      bottom: roundMetric(rect.bottom),
+    };
+  }
+
+  function buildDomPathSegment(element) {
     if (!(element instanceof Element)) {
       return "";
     }
 
-    if (typeof element.className !== "string") {
+    const tag = element.tagName.toLowerCase();
+    const testId = limitText(element.getAttribute("data-testid") || "", 40);
+    const role = limitText(element.getAttribute("role") || "", 24);
+    const authorRole = limitText(
+      element.getAttribute("data-message-author-role") || "",
+      16
+    );
+    let segment = tag;
+
+    if (testId) {
+      segment += `[data-testid=${testId}]`;
+    } else if (authorRole) {
+      segment += `[author=${authorRole}]`;
+    } else if (role) {
+      segment += `[role=${role}]`;
+    } else if (element.hasAttribute("contenteditable")) {
+      segment += "[editable]";
+    } else if (element.parentElement) {
+      const siblings = Array.from(element.parentElement.children).filter(
+        (child) => child.tagName === element.tagName
+      );
+
+      if (siblings.length > 1) {
+        segment += `:nth-of-type(${siblings.indexOf(element) + 1})`;
+      }
+    }
+
+    return segment;
+  }
+
+  function buildDomPathSignature(element, maxDepth = 5) {
+    if (!(element instanceof Element)) {
       return "";
     }
 
-    return limitText(element.className, 120);
+    const segments = [];
+    let current = element;
+
+    while (current instanceof Element && segments.length < maxDepth) {
+      segments.unshift(buildDomPathSegment(current));
+
+      if (
+        current.matches(getTurnSelector()) ||
+        current.matches("[data-message-author-role]") ||
+        current === document.body
+      ) {
+        break;
+      }
+
+      current = current.parentElement;
+    }
+
+    return segments.filter(Boolean).join(" > ");
   }
 
-  function parseTurnIndex(testId) {
-    const match = String(testId || "").match(/conversation-turn-(\d+)/);
-    return match ? Number(match[1]) : 0;
-  }
-
-  function summarizeTurn(turnElement) {
+  function summarizeTurn(traceRecorder, turnElement) {
     if (!(turnElement instanceof Element)) {
       return null;
     }
@@ -71,14 +190,20 @@
     const messageElement = turnElement.querySelector("[data-message-author-role]");
     const optimizableElements = turnElement.querySelectorAll(".csp-optimizable");
     const keepAliveElements = turnElement.querySelectorAll(".csp-keep-alive");
+    const testId = turnElement.getAttribute("data-testid") || "";
+    const rawTurnId = turnElement.getAttribute("data-turn-id") || "";
+    const rawMessageId = messageElement?.getAttribute("data-message-id") || "";
 
     return {
-      testId: turnElement.getAttribute("data-testid") || "",
-      turnIndex: parseTurnIndex(turnElement.getAttribute("data-testid") || ""),
-      turnId: turnElement.getAttribute("data-turn-id") || "",
+      testId,
+      turnIndex: parseTurnIndex(testId),
+      turnHash: buildTraceIdentifier(traceRecorder, "t", rawTurnId, testId),
       turnRole: turnElement.getAttribute("data-turn") || "",
-      scrollAnchor: turnElement.getAttribute("data-scroll-anchor") || "",
-      messageId: messageElement?.getAttribute("data-message-id") || "",
+      scrollAnchor: limitText(
+        turnElement.getAttribute("data-scroll-anchor") || "",
+        40
+      ),
+      messageHash: buildTraceIdentifier(traceRecorder, "m", rawMessageId),
       authorRole:
         messageElement?.getAttribute("data-message-author-role") || "",
       editing: Boolean(turnElement.querySelector(getTurnEditorSelector())),
@@ -87,41 +212,101 @@
     };
   }
 
-  function summarizeElement(element) {
+  function summarizeElement(traceRecorder, element) {
     if (!(element instanceof Element)) {
       return null;
     }
 
     const turnElement = element.closest(getTurnSelector());
     const messageElement = element.closest("[data-message-author-role]");
+    const testId = element.getAttribute("data-testid") || "";
+    const rawTurnId =
+      element.getAttribute("data-turn-id") ||
+      turnElement?.getAttribute("data-turn-id") ||
+      "";
+    const rawMessageId =
+      element.getAttribute("data-message-id") ||
+      messageElement?.getAttribute("data-message-id") ||
+      "";
 
     return {
       tag: element.tagName.toLowerCase(),
-      id: element.id || "",
-      className: safeClassName(element),
+      domId: limitText(element.id || "", 48),
       role: element.getAttribute("role") || "",
-      testId: element.getAttribute("data-testid") || "",
-      turnId:
-        element.getAttribute("data-turn-id") ||
-        turnElement?.getAttribute("data-turn-id") ||
-        "",
-      messageId:
-        element.getAttribute("data-message-id") ||
-        messageElement?.getAttribute("data-message-id") ||
-        "",
+      testId,
+      domPathSignature: buildDomPathSignature(element),
+      turnHash: buildTraceIdentifier(traceRecorder, "t", rawTurnId, testId),
+      messageHash: buildTraceIdentifier(traceRecorder, "m", rawMessageId),
       authorRole:
         element.getAttribute("data-message-author-role") ||
         messageElement?.getAttribute("data-message-author-role") ||
         "",
-      ariaLabel: limitText(element.getAttribute("aria-label") || "", 80),
-      title: limitText(element.getAttribute("title") || "", 80),
-      text: limitText(element.textContent || "", 120),
+      isEditable:
+        element.matches(getTurnEditorSelector()) ||
+        Boolean(element.closest(getTurnEditorSelector())),
+      isConnected: Boolean(element.isConnected),
+      isOptimizable: element.classList.contains("csp-optimizable"),
+      isKeepAlive: element.classList.contains("csp-keep-alive"),
+      hidden: element.hidden,
+      open: typeof element.open === "boolean" ? element.open : false,
+      ariaBusy: element.getAttribute("aria-busy") === "true",
+      classFlags: collectClassFlags(element),
+      rect: summarizeRect(element),
     };
   }
 
-  function collectTurnIds(turns) {
+  function summarizeRecord(traceRecorder, record) {
+    if (!record || typeof record !== "object") {
+      return null;
+    }
+
+    const sourceElement =
+      record.contentElement instanceof Element
+        ? record.contentElement
+        : record.messageElement instanceof Element
+        ? record.messageElement
+        : null;
+    const sourceTestId =
+      sourceElement?.getAttribute("data-testid") ||
+      record.messageElement?.getAttribute?.("data-testid") ||
+      record.contentElement?.getAttribute?.("data-testid") ||
+      "";
+
+    return {
+      recordId: Number.isFinite(record.id) ? record.id : 0,
+      orderIndex: Number.isFinite(record.orderIndex) ? record.orderIndex : -1,
+      turnHash: buildTraceIdentifier(
+        traceRecorder,
+        "t",
+        record.turnId || "",
+        sourceTestId || record.stableKey || String(record.id || "")
+      ),
+      messageHash: buildTraceIdentifier(
+        traceRecorder,
+        "m",
+        record.messageId || "",
+        record.stableKey || String(record.id || "")
+      ),
+      authorRole: record.authorRole || "",
+      optimized: Boolean(record.optimized),
+      protected: Boolean(record.protected),
+      visible: Boolean(record.visible),
+      nearViewport: Boolean(record.nearViewport),
+      streaming: Boolean(record.streaming),
+      modeId: record.modeState?.modeId || "",
+      distanceTier: record.modeState?.distanceTier || "",
+      domPathSignature: sourceElement ? buildDomPathSignature(sourceElement) : "",
+    };
+  }
+
+  function parseTurnIndex(testId) {
+    const match = String(testId || "").match(/conversation-turn-(\d+)/);
+    return match ? Number(match[1]) : 0;
+  }
+
+  function collectTurnKeys(turns) {
     return turns
-      .map((turn) => turn?.turnId || turn?.testId || "")
+      .map((turn) => turn?.turnHash || turn?.testId || "")
       .filter(Boolean);
   }
 
@@ -148,11 +333,60 @@
     };
   }
 
+  function classifyConversationScope(pathname, hasChatRoot) {
+    if (hasChatRoot || /^\/(?:c|g)\/|^\/$/.test(pathname || "")) {
+      return "chat";
+    }
+
+    if (/settings/i.test(pathname || "")) {
+      return "settings";
+    }
+
+    if (/library|gpts/i.test(pathname || "")) {
+      return "library";
+    }
+
+    return "unknown";
+  }
+
   app.runtime.traceRecorderSnapshotMethods = {
+    hashTraceValue(prefix, value) {
+      const rawValue = String(value || "").trim();
+
+      if (!rawValue) {
+        return "";
+      }
+
+      this.ensureTraceSession();
+      const source = `${this.runtime.exportSalt}|${rawValue}`;
+      let hash = 2166136261;
+
+      for (let index = 0; index < source.length; index += 1) {
+        hash ^= source.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+      }
+
+      return `${prefix}_${(hash >>> 0).toString(36).slice(0, 8)}`;
+    },
+
+    buildRouteSummary(locationLike = globalThis.location, chatRoot = null) {
+      const pathname = locationLike?.pathname || "";
+      const search = locationLike?.search || "";
+      const hash = locationLike?.hash || "";
+      const rawPath = `${pathname}${search}${hash}`;
+
+      return {
+        routeHash: this.hashTraceValue("r", rawPath),
+        pathHash: this.hashTraceValue("p", pathname),
+        pathDepth: pathname.split("/").filter(Boolean).length,
+        conversationScope: classifyConversationScope(pathname, Boolean(chatRoot)),
+      };
+    },
+
     buildEventDetail(event) {
       const target = toElement(event.target);
       const detail = {
-        target: summarizeElement(target),
+        target: summarizeElement(this, target),
       };
 
       if (typeof event.button === "number") {
@@ -185,6 +419,25 @@
       return detail;
     },
 
+    buildTraceRecordSummary(record) {
+      return summarizeRecord(this, record);
+    },
+
+    buildTraceRecordSummaries(records, maxSize = 8) {
+      const source = Array.isArray(records) ? records : [];
+      const summaries = [];
+
+      for (let index = 0; index < source.length && summaries.length < maxSize; index += 1) {
+        const summary = summarizeRecord(this, source[index]);
+
+        if (summary) {
+          summaries.push(summary);
+        }
+      }
+
+      return summaries;
+    },
+
     collectTurnSummariesFromNode(node, output) {
       const element = toElement(node);
 
@@ -193,7 +446,7 @@
       }
 
       if (element.matches(getTurnSelector())) {
-        const summary = summarizeTurn(element);
+        const summary = summarizeTurn(this, element);
 
         if (summary) {
           output.push(summary);
@@ -201,7 +454,7 @@
       }
 
       element.querySelectorAll(getTurnSelector()).forEach((turnElement) => {
-        const summary = summarizeTurn(turnElement);
+        const summary = summarizeTurn(this, turnElement);
 
         if (summary) {
           output.push(summary);
@@ -241,7 +494,7 @@
           if (attributeChanges.length < maxMutationSamples) {
             attributeChanges.push({
               name: mutation.attributeName || "",
-              target: summarizeElement(toElement(mutation.target)),
+              target: summarizeElement(this, toElement(mutation.target)),
             });
           }
           return;
@@ -258,7 +511,7 @@
       const seenRemoved = new Set();
 
       addedTurns.forEach((turn) => {
-        const key = turn.turnId || turn.testId;
+        const key = turn.turnHash || turn.testId;
 
         if (!key || seenAdded.has(key)) {
           return;
@@ -268,7 +521,7 @@
         uniqueAddedTurns.push(turn);
       });
       removedTurns.forEach((turn) => {
-        const key = turn.turnId || turn.testId;
+        const key = turn.turnHash || turn.testId;
 
         if (!key || seenRemoved.has(key)) {
           return;
@@ -300,9 +553,9 @@
       const tailTurnCount = Math.max(4, config.trace.tailTurnCount || 10);
       const tailTurns = turnElements
         .slice(-tailTurnCount)
-        .map((turnElement) => summarizeTurn(turnElement))
+        .map((turnElement) => summarizeTurn(this, turnElement))
         .filter(Boolean);
-      const activeElement = toElement(document.activeElement);
+      const activeElement = getPreferredActiveElement();
       const editableState =
         typeof app.dom.getThreadEditLifecycleState === "function"
           ? app.dom.getThreadEditLifecycleState(chatRoot)
@@ -312,26 +565,27 @@
                 : 0,
               editableTurns: [],
             };
-      const editableTurnIds = limitArray(
+      const editableTurnHashes = limitArray(
         (editableState.editableTurns || [])
-          .map((turnElement) => summarizeTurn(turnElement))
+          .map((turnElement) => summarizeTurn(this, turnElement))
           .filter(Boolean)
-          .map((turn) => turn.turnId || turn.testId || "")
+          .map((turn) => turn.turnHash || turn.testId || "")
           .filter(Boolean),
         tailTurnCount
       );
       const lastTurn = tailTurns[tailTurns.length - 1] || null;
+      const routeSummary = this.buildRouteSummary(globalThis.location, chatRoot);
 
       return {
-        routeKey: this.controller.getRouteKey(),
-        path: globalThis.location.pathname,
-        title: document.title || "",
+        ...routeSummary,
+        isChatPage: Boolean(chatRoot),
+        adapterId: this.controller?.state?.page?.activeAdapterId || "",
         turnCount: turnElements.length,
         messageCount: chatRoot
           ? chatRoot.querySelectorAll("[data-message-author-role]").length
           : 0,
         editableTurnCount: editableState.editableTurnCount || 0,
-        editableTurnIds,
+        editableTurnHashes,
         cspOptimizableCount: chatRoot
           ? chatRoot.querySelectorAll(".csp-optimizable").length
           : 0,
@@ -339,8 +593,12 @@
           ? chatRoot.querySelectorAll(".csp-keep-alive").length
           : 0,
         lastTurn,
+        lastTurnHash: lastTurn?.turnHash || lastTurn?.testId || "",
         tailTurns,
-        activeElement: summarizeElement(activeElement),
+        tailTurnHashes: tailTurns
+          .map((turn) => turn.turnHash || turn.testId || "")
+          .filter(Boolean),
+        activeElement: summarizeElement(this, activeElement),
       };
     },
 
@@ -350,8 +608,8 @@
       }
 
       const maxTurnDiffIds = Math.max(4, config.trace.maxTurnDiffIds || 24);
-      const previousTurnIds = collectTurnIds(previousSnapshot.tailTurns || []);
-      const nextTurnIds = collectTurnIds(nextSnapshot.tailTurns || []);
+      const previousTurnIds = collectTurnKeys(previousSnapshot.tailTurns || []);
+      const nextTurnIds = collectTurnKeys(nextSnapshot.tailTurns || []);
       const tailDelta = diffIdentifierLists(
         previousTurnIds,
         nextTurnIds,
@@ -370,10 +628,10 @@
         cspKeepAliveCountDelta:
           nextSnapshot.cspKeepAliveCount - previousSnapshot.cspKeepAliveCount,
         lastTurnChanged:
-          (previousSnapshot.lastTurn?.turnId || previousSnapshot.lastTurn?.testId) !==
-            (nextSnapshot.lastTurn?.turnId || nextSnapshot.lastTurn?.testId) ||
-          (previousSnapshot.lastTurn?.messageId || "") !==
-            (nextSnapshot.lastTurn?.messageId || ""),
+          (previousSnapshot.lastTurn?.turnHash || previousSnapshot.lastTurn?.testId) !==
+            (nextSnapshot.lastTurn?.turnHash || nextSnapshot.lastTurn?.testId) ||
+          (previousSnapshot.lastTurn?.messageHash || "") !==
+            (nextSnapshot.lastTurn?.messageHash || ""),
         tailAdded: tailDelta.added,
         tailRemoved: tailDelta.removed,
       };

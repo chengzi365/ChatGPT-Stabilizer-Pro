@@ -86,16 +86,6 @@
         }
       },
 
-      buildMeasurementPriorityList(records, predicate) {
-        const prioritized = [];
-
-        this.appendMeasurementPriorityRecords(records, predicate, (record) => {
-          prioritized.push(record);
-        });
-
-        return prioritized;
-      },
-
       countPendingMeasurements(records) {
         let pending = 0;
 
@@ -190,7 +180,7 @@
           return;
         }
 
-      this.queueActiveModeMeasurementBacklog(recordId);
+        this.queueActiveModeMeasurementBacklog(recordId);
       },
 
       buildPerformanceMeasurementQueue(records, reason, isResync) {
@@ -226,7 +216,7 @@
           appendRecord
         );
 
-      const backlogRecords = this.collectActiveModeMeasurementBacklog({
+        const backlogRecords = this.collectActiveModeMeasurementBacklog({
           allowBacklogFill,
         });
 
@@ -336,7 +326,7 @@
         }
 
         if (runtimeState.effectiveMode === "performance") {
-        this.pruneActiveModeMeasurementBacklog();
+          this.pruneActiveModeMeasurementBacklog();
         }
 
         if (runtimeState.effectiveMode !== "performance") {

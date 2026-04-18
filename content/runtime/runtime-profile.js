@@ -177,7 +177,6 @@
     };
   }
 
-  app.runtime.getRuntimeViewportSnapshot = getViewportSnapshot;
   app.runtime.resolveRuntimeDeviceTier = getDeviceTier;
   app.runtime.resolveRuntimeProfileBucket = resolveRuntimeBucket;
   app.runtime.getRuntimeProfileLevelConfig = getRuntimeProfileLevelConfig;
@@ -185,15 +184,6 @@
   app.runtime.createRuntimeProfileState = createRuntimeProfileState;
 
   app.runtime.runtimeProfileControllerMethods = {
-    getEffectiveSyncConfig() {
-      const runtimeState = this.state.runtime;
-
-      return (
-        runtimeState.effectiveSyncConfig ||
-        app.runtime.getRuntimeProfileSyncConfig(runtimeState.runtimeProfile)
-      );
-    },
-
     rebuildEffectiveRuntimeConfig() {
       const runtimeState = this.state.runtime;
 

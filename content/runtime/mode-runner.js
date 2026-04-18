@@ -61,7 +61,33 @@
       runtimeState.level = effectiveMode ? effectiveMode.runtimeLevel : config.defaultLevel;
       strategyState.activeSessionModeId = effectiveMode ? effectiveMode.id : "";
       this.rebuildEffectiveRuntimeConfig();
+      this.syncDiagnosticsCollectionPolicy();
       return effectiveMode;
+    },
+
+    syncDiagnosticsCollectionPolicy() {
+      const runtimeLevel = this.state.runtime.level;
+      const dataCollectionEnabled = runtimeLevel !== "off";
+
+      this.diagnostics.setCollectionPolicy({
+        metricsEnabled: dataCollectionEnabled,
+        sessionEnabled: dataCollectionEnabled,
+        traceEnabled: dataCollectionEnabled,
+        eventsEnabled: dataCollectionEnabled,
+      });
+
+      if (dataCollectionEnabled) {
+        return;
+      }
+
+      storage.set(config.storageKeys.traceRecording, false);
+
+      if (!this.traceRecorder) {
+        return;
+      }
+
+      this.stopTraceRecording("mode-off");
+      this.clearTraceRecording();
     },
 
     getModeStrategySessionsStore() {
@@ -130,22 +156,6 @@
 
       this.getModeStrategySessionsStore()[mode.id] = nextSession;
       return nextSession;
-    },
-
-    getActiveModeStrategySession() {
-      const strategyState = this.state.strategy;
-      const activeMode = this.getActiveModeDefinition();
-
-      if (!activeMode) {
-        strategyState.activeSessionModeId = "";
-        return null;
-      }
-
-      strategyState.activeSessionModeId = activeMode.id;
-      return (
-        this.ensureModeStrategySession(activeMode.id) ||
-        this.getModeStrategySession(activeMode.id)
-      );
     },
 
     invokeModeHook(modeId, hookName, hookContext = {}, { ensureSession = false } = {}) {
@@ -422,6 +432,12 @@
     },
 
     clearRecordStyles(record) {
+      const traceRecord =
+        this.traceRecorder &&
+        typeof this.traceRecorder.buildTraceRecordSummary === "function"
+          ? this.traceRecorder.buildTraceRecordSummary(record)
+          : null;
+
       if (
         (record.baseStyleOptimized || record.baseStyleKeepAlive || record.modeState)
       ) {
@@ -429,7 +445,8 @@
           "style",
           "clear-record-styles",
           {
-            recordId: record.id,
+            record: traceRecord,
+            turnHash: traceRecord?.turnHash || "",
             contentId: record.baseStyleId || String(record.id),
             optimized: Boolean(record.baseStyleOptimized),
             keepAlive: Boolean(record.baseStyleKeepAlive),
@@ -457,6 +474,12 @@
     },
 
     applyRecordStyles(record, decision) {
+      const traceRecord =
+        this.traceRecorder &&
+        typeof this.traceRecorder.buildTraceRecordSummary === "function"
+          ? this.traceRecorder.buildTraceRecordSummary(record)
+          : null;
+
       if (decision && Number.isFinite(decision.selfMutationDurationMs)) {
         record.selfMutationUntil = performance.now() + decision.selfMutationDurationMs;
       }
@@ -465,11 +488,14 @@
         "style",
         "apply-record-styles",
         {
-          recordId: record.id,
+          record: traceRecord,
+          turnHash: traceRecord?.turnHash || "",
           optimize: Boolean(decision.optimize),
           keepAlive: Boolean(decision.keepAlive),
           modeId: decision.modeState?.modeId || "",
           distanceTier: decision.modeState?.distanceTier || "",
+          eligible: Boolean(decision.eligible),
+          requiresMeasurementFollowup: Boolean(decision.requiresMeasurementFollowup),
         },
         { includeSnapshot: false }
       );

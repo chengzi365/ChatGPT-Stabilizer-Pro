@@ -350,10 +350,6 @@
       return this.byContent.get(contentElement) || null;
     }
 
-    getByStableKey(stableKey) {
-      return this.byStableKey.get(stableKey) || null;
-    }
-
     getById(id) {
       return this.records.get(id) || null;
     }

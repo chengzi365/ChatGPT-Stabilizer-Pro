@@ -21,6 +21,14 @@
       sessionState.lockedDegradation = false;
       sessionState.lockedReason = "";
       this.syncSessionStateToDiagnostics();
+      this.recordTraceEntry(
+        "recovery",
+        "unlock-degradation",
+        {
+          reason: "manual-or-recovery",
+        },
+        { includeSnapshot: true }
+      );
       return true;
     },
 
@@ -43,8 +51,23 @@
       sessionState.stableSyncCount = 0;
       this.unlockDegradation();
       this.clearSessionAnomaly();
+
+      if (nextMode.id === "off") {
+        this.resetSessionRuntimeState({ alignEffectiveMode: false });
+      }
+
       this.syncModeStateToDiagnostics();
       this.syncSessionStateToDiagnostics();
+      this.recordTraceEntry(
+        "recovery",
+        "apply-selected-mode",
+        {
+          previousModeId,
+          nextModeId: nextMode.id,
+          targetModeId: runtimeState.targetMode || "",
+        },
+        { includeSnapshot: true }
+      );
       return nextMode;
     },
 
@@ -71,9 +94,23 @@
 
       this.prepareForModeSwitch(runtimeState.effectiveMode, targetMode.id);
 
+      const previousModeId = runtimeState.effectiveMode;
+
       runtimeState.effectiveMode = targetMode.id;
       this.syncEffectiveRuntimeLevel();
       this.recordModeRecovery(reason, targetMode.id, { unlock });
+      this.recordTraceEntry(
+        "recovery",
+        "recover-effective-mode",
+        {
+          reason,
+          previousModeId,
+          nextModeId: targetMode.id,
+          unlock,
+          lockedDegradation: this.state.strategy.session.lockedDegradation,
+        },
+        { includeSnapshot: true }
+      );
       return true;
     },
 
@@ -104,6 +141,11 @@
       } = {}
     ) {
       const records = this.registry.getOrderedRecords();
+      const traceRecords =
+        this.traceRecorder &&
+        typeof this.traceRecorder.buildTraceRecordSummaries === "function"
+          ? this.traceRecorder.buildTraceRecordSummaries(records, 6)
+          : [];
 
       if (emitRequestedEvent) {
         this.diagnostics.pushEvent("restore", "events.sessionRestoreRequested", "warn", {
@@ -123,6 +165,19 @@
       this.diagnostics.pushEvent("restore", "events.sessionRestoreComplete", "info", {
         reason: formatReason(reason),
       });
+      this.recordTraceEntry(
+        "recovery",
+        "restore-current-session",
+        {
+          reason,
+          forcedModeId,
+          lock,
+          emitRequestedEvent,
+          recordCount: records.length,
+          records: traceRecords,
+        },
+        { includeSnapshot: true }
+      );
       this.scheduleSync(reason, true);
       return true;
     },
@@ -141,6 +196,17 @@
       });
       this.syncModeStateToDiagnostics();
       this.syncSessionStateToDiagnostics();
+      this.recordTraceEntry(
+        "recovery",
+        "sync-failure",
+        {
+          message,
+          forcedModeId,
+          targetModeId: runtimeState.targetMode || "",
+          effectiveModeId: runtimeState.effectiveMode || "",
+        },
+        { includeSnapshot: true }
+      );
     },
   };
 })();

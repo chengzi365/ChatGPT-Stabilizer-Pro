@@ -17,6 +17,12 @@
     const id = mode.id.trim();
     const status = mode.status || "implemented";
     const runtimeLevel = mode.runtimeLevel || id;
+    const fallbackTarget =
+      typeof mode.fallbackTarget === "string"
+        ? mode.fallbackTarget.trim()
+        : mode.fallbackTarget === null
+        ? ""
+        : config.defaultLevel;
 
     return Object.freeze({
       id,
@@ -27,7 +33,7 @@
       visible: mode.visible !== false,
       selectable: mode.selectable ?? status === "implemented",
       runtimeLevel,
-      fallbackTarget: mode.fallbackTarget || config.defaultLevel,
+      fallbackTarget,
       riskTag: mode.riskTag || "low",
       labelKey: mode.labelKey || `levels.${id}.label`,
       descriptionKey: mode.descriptionKey || `levels.${id}.description`,
@@ -230,7 +236,7 @@
         status: "implemented",
         selectable: true,
         runtimeLevel: "off",
-        fallbackTarget: "standard",
+        fallbackTarget: "",
         riskTag: "none",
       },
       {
@@ -241,8 +247,8 @@
         status: "implemented",
         selectable: true,
         runtimeLevel: "monitor",
-        fallbackTarget: "standard",
-        riskTag: "very-low",
+        fallbackTarget: "",
+        riskTag: "none",
       },
     ].forEach((mode) => {
       const normalizedMode = normalizeMode(mode);
@@ -261,9 +267,6 @@
   app.modes.register = register;
   app.modes.get = getMode;
   app.modes.list = listModes;
-  app.modes.listVisible = listVisibleModes;
-  app.modes.listImplemented = listImplementedModes;
-  app.modes.listPlanned = listPlannedModes;
   app.modes.resolveSelection = resolveModeSelection;
   app.modes.getDiagnosticsCatalog = getDiagnosticsCatalog;
 })();

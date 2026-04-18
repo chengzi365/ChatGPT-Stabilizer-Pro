@@ -510,7 +510,6 @@
     getChatRootSignals,
     nodeTouchesDiscoveryCandidate,
     resolveDiscovery,
-    getDiscoveryState: createDiscoverySnapshot,
     findChatRoot,
     isChatPage,
     findScrollRoot,

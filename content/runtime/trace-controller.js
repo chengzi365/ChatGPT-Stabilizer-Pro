@@ -1,35 +1,32 @@
 (() => {
   const app = globalThis.__CSP__;
+  const config = app.core.config;
+  const storage = app.core.storage;
 
   app.runtime.traceControllerMethods = {
-    initTraceRecorder() {
-      if (!this.traceRecorder) {
-        this.traceRecorder = new app.runtime.TraceRecorder(this);
-      }
-
-      this.traceRecorder.init();
+    shouldInitTraceRecorder() {
+      return Boolean(storage.get(config.storageKeys.traceRecording, false));
     },
 
-    getTraceRecorderState() {
+    ensureTraceRecorder() {
       if (!this.traceRecorder) {
-        return app.runtime.createTraceDiagnosticsState
-          ? app.runtime.createTraceDiagnosticsState()
-          : {
-              recording: false,
-              entryCount: 0,
-              domEventCount: 0,
-              mutationBatchCount: 0,
-              snapshotCount: 0,
-              syncEventCount: 0,
-              styleWriteCount: 0,
-              startedAt: 0,
-              lastUpdatedAt: 0,
-              lastKind: "",
-              lastType: "",
-            };
+        this.traceRecorder = new app.runtime.TraceRecorder(this);
+        this.traceRecorderInitialized = false;
       }
 
-      return this.traceRecorder.getDiagnosticsState();
+      return this.traceRecorder;
+    },
+
+    initTraceRecorder() {
+      const traceRecorder = this.ensureTraceRecorder();
+
+      if (this.traceRecorderInitialized) {
+        return traceRecorder;
+      }
+
+      traceRecorder.init();
+      this.traceRecorderInitialized = true;
+      return traceRecorder;
     },
 
     isTraceRecording() {
@@ -45,11 +42,13 @@
     },
 
     startTraceRecording(options = {}) {
-      if (!this.traceRecorder) {
+      const traceRecorder = this.initTraceRecorder();
+
+      if (!traceRecorder) {
         return false;
       }
 
-      return this.traceRecorder.start(options);
+      return traceRecorder.start(options);
     },
 
     stopTraceRecording(reason = "manual") {

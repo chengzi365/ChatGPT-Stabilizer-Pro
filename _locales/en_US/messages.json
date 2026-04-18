@@ -168,7 +168,7 @@
     "message": "Off"
   },
   "levels_off_description": {
-    "message": "Does not take over content or write optimization styles; only status metrics and panel features remain active."
+    "message": "Disables all optimization, metrics, diagnostics, events, and debug recording. Only the control panel itself remains operable."
   },
   "levels_off_risk": {
     "message": "Does not affect any native functionality."
@@ -177,7 +177,7 @@
     "message": "Monitor"
   },
   "levels_monitor_description": {
-    "message": "Enables recognition, metrics, diagnostics, and tracing, but does not take over message content for optimization."
+    "message": "Disables page optimization while keeping page recognition, message stats, diagnostics, events, and debug recording available."
   },
   "levels_monitor_risk": {
     "message": "Does not affect any native functionality."
@@ -219,7 +219,7 @@
     "message": "ChatGPT Stabilizer Pro"
   },
   "panel_subtitle": {
-    "message": "Control panel, runtime status, and diagnostics."
+    "message": "Runtime status & diagnostics"
   },
   "panel_overlay_loadingTitle": {
     "message": "Page loading"
@@ -257,6 +257,9 @@
   "panel_badgeSummary": {
     "message": "{messages} messages | Optimized content blocks {optimized} | Optimization rate {coverage}"
   },
+  "panel_badgeSummaryCompact": {
+    "message": "Messages {messages} | Opt. blocks {optimized} | Opt. rate {coverage}"
+  },
   "panel_eventMeta": {
     "message": "{time} | {type}"
   },
@@ -270,10 +273,10 @@
     "message": "The control panel failed to render: {error}. Try clicking Refresh or reloading the extension."
   },
   "panel_summaryIndicatorLabel": {
-    "message": "Optimization level"
+    "message": "Mode"
   },
   "panel_summaryRateLabel": {
-    "message": "Optimization rate"
+    "message": "Opt. rate"
   },
   "panel_actions_copy": {
     "message": "Copy"
@@ -335,6 +338,18 @@
   "panel_tabs_overview": {
     "message": "Overview"
   },
+  "panel_tabs_mode": {
+    "message": "Mode"
+  },
+  "panel_tabs_messages": {
+    "message": "Stats"
+  },
+  "panel_tabs_performance": {
+    "message": "Perf"
+  },
+  "panel_tabs_events": {
+    "message": "Events"
+  },
   "panel_runtime_status": {
     "message": "Status"
   },
@@ -387,7 +402,7 @@
     "message": "Optimizable"
   },
   "panel_messages_optimized": {
-    "message": "Optimized content blocks"
+    "message": "Optimized blocks"
   },
   "panel_messages_keepAlive": {
     "message": "Keep alive"
@@ -530,6 +545,9 @@
   "panel_trace_entries": {
     "message": "Record count"
   },
+  "panel_trace_entryLimit": {
+    "message": "Entry limit"
+  },
   "panel_trace_domEvents": {
     "message": "DOM events"
   },
@@ -551,8 +569,14 @@
   "panel_trace_lastEntry": {
     "message": "Last record"
   },
+  "panel_trace_stopReason": {
+    "message": "Stop reason"
+  },
   "panel_trace_recorded": {
     "message": "Recorded"
+  },
+  "panel_trace_unavailable": {
+    "message": "Debug unavailable"
   },
   "panel_trace_start": {
     "message": "Start debugging"
@@ -560,11 +584,35 @@
   "panel_trace_stop": {
     "message": "Stop debugging"
   },
+  "panel_trace_active": {
+    "message": "Debug active"
+  },
+  "panel_trace_activeHint": {
+    "message": "Structured debug data is being recorded. Stop debugging before copying or exporting."
+  },
+  "panel_trace_activeBadge": {
+    "message": "Debug active"
+  },
+  "panel_trace_stoppedByLimit": {
+    "message": "Stopped after reaching the debug entry limit"
+  },
+  "panel_trace_stoppedByLimitHint": {
+    "message": "The debug log reached the {maxEntries} entry limit. Earliest entries were preserved and the log is ready to export."
+  },
+  "panel_trace_stoppedByLimitBadge": {
+    "message": "Debug limit reached"
+  },
   "panel_trace_export": {
     "message": "Export JSON"
   },
+  "panel_trace_exportDisabledWhileRecording": {
+    "message": "Debugging is active. Stop debugging before exporting JSON."
+  },
   "panel_trace_copy": {
     "message": "Copy JSON"
+  },
+  "panel_trace_copyDisabledWhileRecording": {
+    "message": "Debugging is active. Stop debugging before copying JSON."
   },
   "panel_trace_clear": {
     "message": "Clear debug log"
@@ -739,6 +787,15 @@
   },
   "events_copyDiagnosticsFailure": {
     "message": "Failed to copy diagnostics snapshot."
+  },
+  "events_traceExportBlockedWhileRecording": {
+    "message": "Debugging is active. Stop debugging before exporting JSON."
+  },
+  "events_traceCopyBlockedWhileRecording": {
+    "message": "Debugging is active. Stop debugging before copying JSON."
+  },
+  "events_traceMaxEntriesReached": {
+    "message": "The debug log reached the {maxEntries} entry limit, then stopped automatically and completed shutdown."
   },
   "events_levelUnavailable": {
     "message": "{level} is not available in this build."

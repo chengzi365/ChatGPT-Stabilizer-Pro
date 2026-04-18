@@ -14,6 +14,22 @@
   app.ui.panelTabIds = ["overview", "mode", "messages", "performance", "events"];
 
   app.ui.panelRenderMethods = {
+    setTraceRecordingChrome(isRecording) {
+      const nextValue = String(Boolean(isRecording));
+      const elements = [
+        this.elements.shell,
+        this.elements.panel,
+        this.elements.badge,
+        this.elements.launcher,
+      ];
+
+      elements.forEach((element) => {
+        if (element && element.dataset.traceRecording !== nextValue) {
+          element.dataset.traceRecording = nextValue;
+        }
+      });
+    },
+
     shouldRenderSection(sectionName) {
       return !this.hasRendered || this.dirtySections.has(sectionName);
     },
@@ -115,18 +131,54 @@
       }
 
       const state = this.state;
+      const panelBadge = state.panelBadge || {};
       const metrics = state.metrics || {};
-      const nextStatus = state.runtimeStatus;
-      const summaryText = t("panel.badgeSummary", {
-        messages: formatNumber(metrics.messageTotal),
-        optimized: formatNumber(metrics.optimized),
-        coverage: formatPercent(metrics.coverageRate),
-      });
+      const nextStatus = panelBadge.runtimeStatus || state.runtimeStatus;
+      const traceStatus = state.traceStatus || state.trace || {};
+      const traceRecording = Boolean(traceStatus.recording);
+      const limitReached = Boolean(
+        traceStatus.entryLimitReached && !traceStatus.recording
+      );
+      const badgeSummaryParams = {
+        messages: formatNumber(panelBadge.messageTotal ?? metrics.messageTotal),
+        optimized: formatNumber(panelBadge.optimized ?? metrics.optimized),
+        coverage: formatPercent(panelBadge.coverageRate ?? metrics.coverageRate),
+      };
+      const badgeSummaryFull = t(
+        "panel.badgeSummary",
+        badgeSummaryParams,
+        "{messages} messages | Optimized content blocks {optimized} | Optimization rate {coverage}"
+      );
+      const summaryText = traceRecording
+        ? t("panel.trace.activeBadge", {}, "Debug active")
+        : limitReached
+        ? t("panel.trace.stoppedByLimitBadge", {}, "Debug limit reached")
+        : t(
+            "panel.badgeSummaryCompact",
+            badgeSummaryParams,
+            "{messages} msg | {optimized} opt | {coverage}"
+          );
 
       if (this.elements.badgeDot.dataset.status !== nextStatus) {
         this.elements.badgeDot.dataset.status = nextStatus;
       }
 
+      this.setTraceRecordingChrome(traceRecording);
+      this.elements.badgeSummary.title = traceRecording
+        ? t(
+            "panel.trace.activeHint",
+            {},
+            "Structured debug data is being recorded. Stop debugging before copying or exporting."
+          )
+        : limitReached
+        ? t(
+            "panel.trace.stoppedByLimitHint",
+            {
+              maxEntries: formatNumber(traceStatus.entryLimit || 0),
+            },
+            "The debug log reached the {maxEntries} entry limit. Earliest entries were preserved and the log is ready to export."
+          )
+        : badgeSummaryFull;
       this.setCachedText("badge-summary", this.elements.badgeSummary, summaryText);
     },
   };

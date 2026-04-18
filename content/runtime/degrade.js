@@ -41,6 +41,20 @@
       runtimeState.effectiveMode = nextMode.id;
       this.syncEffectiveRuntimeLevel();
       this.recordModeDegrade(reason, nextMode.id, { lock });
+      this.recordTraceEntry(
+        "recovery",
+        "degrade-effective-mode",
+        {
+          reason,
+          previousModeId,
+          nextModeId: nextMode.id,
+          forcedModeId: forcedModeId || "",
+          lock,
+          targetModeId: runtimeState.targetMode || "",
+          lockedDegradation: this.state.strategy.session.lockedDegradation,
+        },
+        { includeSnapshot: true }
+      );
       return true;
     },
   };

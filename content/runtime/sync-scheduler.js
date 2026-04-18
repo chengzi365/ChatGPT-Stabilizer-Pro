@@ -8,9 +8,237 @@
     return i18n.t(key, params, fallback);
   }
 
+  function scheduleAfterNextPaint(callback) {
+    if (typeof globalThis.requestAnimationFrame === "function") {
+      globalThis.requestAnimationFrame(() => {
+        globalThis.setTimeout(callback, 0);
+      });
+      return;
+    }
+
+    globalThis.setTimeout(callback, 16);
+  }
+
+  function clampProgress(value, minimum = 0, maximum = 100) {
+    if (!Number.isFinite(value)) {
+      return minimum;
+    }
+
+    return Math.max(minimum, Math.min(maximum, Math.round(value)));
+  }
+
   app.runtime.syncControllerMethods = {
     isBackgroundPanelActivityReason(reason) {
       return reason === "measurement-backlog";
+    },
+
+    waitForNextPaint() {
+      return new Promise((resolve) => {
+        scheduleAfterNextPaint(resolve);
+      });
+    },
+
+    getCurrentDiagnosticsOptimizedCount() {
+      const metrics =
+        this.diagnostics && typeof this.diagnostics.getSliceState === "function"
+          ? this.diagnostics.getSliceState("metrics")
+          : null;
+
+      return Math.max(metrics?.optimized || 0, 0);
+    },
+
+    getCurrentDiagnosticsUnitTotal() {
+      const metrics =
+        this.diagnostics && typeof this.diagnostics.getSliceState === "function"
+          ? this.diagnostics.getSliceState("metrics")
+          : null;
+
+      return Math.max(metrics?.unitTotal || 0, 0);
+    },
+
+    clearOverlayCompletionTimer() {
+      const schedulerState = this.state.scheduler;
+
+      if (!schedulerState.overlayCompletionTimer) {
+        return;
+      }
+
+      globalThis.clearTimeout(schedulerState.overlayCompletionTimer);
+      schedulerState.overlayCompletionTimer = 0;
+    },
+
+    createOptimizationOverlayJob(projectedUnitTotal, routeKey = "") {
+      const runtimeState = this.state.runtime;
+      const schedulerState = this.state.scheduler;
+      const currentOptimized = this.getCurrentDiagnosticsOptimizedCount();
+      const totalUnits = Math.max(
+        projectedUnitTotal || 0,
+        this.getCurrentDiagnosticsUnitTotal(),
+        1
+      );
+      const activeJob = schedulerState.activeOverlayJob;
+
+      if (
+        runtimeState.level === "off" ||
+        runtimeState.level === "monitor"
+      ) {
+        this.clearOptimizationOverlayJob(activeJob);
+        return null;
+      }
+
+      if (
+        activeJob &&
+        (activeJob.routeKey !== routeKey ||
+          activeJob.level !== runtimeState.level ||
+          activeJob.effectiveMode !== runtimeState.effectiveMode)
+      ) {
+        this.clearOptimizationOverlayJob(activeJob);
+      }
+
+      if (
+        schedulerState.activeOverlayJob &&
+        schedulerState.activeOverlayJob.routeKey === routeKey &&
+        schedulerState.activeOverlayJob.level === runtimeState.level &&
+        schedulerState.activeOverlayJob.effectiveMode === runtimeState.effectiveMode
+      ) {
+        const reusableJob = schedulerState.activeOverlayJob;
+
+        this.clearOverlayCompletionTimer();
+        reusableJob.totalUnits = Math.max(reusableJob.totalUnits || 0, totalUnits);
+        reusableJob.currentOptimized = Math.max(
+          reusableJob.currentOptimized || 0,
+          currentOptimized
+        );
+        reusableJob.completed = false;
+
+        this.diagnostics.setActivityState({
+          overlayVisible: true,
+          overlayJobId: reusableJob.id,
+          overlayKind: "optimizing",
+          overlayStage: "applyOptimization",
+          overlayProgress: reusableJob.lastProgress || 0,
+        });
+
+        return reusableJob;
+      }
+
+      this.clearOverlayCompletionTimer();
+      schedulerState.overlayJobSeq += 1;
+      const job = {
+        id: `${Date.now()}-${schedulerState.overlayJobSeq}`,
+        routeKey,
+        level: runtimeState.level,
+        effectiveMode: runtimeState.effectiveMode,
+        currentOptimized,
+        totalUnits,
+        lastProgress: 0,
+        completed: false,
+      };
+      schedulerState.activeOverlayJob = job;
+
+      this.diagnostics.setActivityState({
+        overlayVisible: true,
+        overlayJobId: job.id,
+        overlayKind: "optimizing",
+        overlayStage: "applyOptimization",
+        overlayProgress: 0,
+      });
+
+      return job;
+    },
+
+    updateOptimizationOverlayJob(
+      job,
+      currentOptimized,
+      currentUnitTotal = 0,
+      stage = "applyOptimization"
+    ) {
+      if (!job || job.completed) {
+        return;
+      }
+
+      const totalUnits = Math.max(
+        job.totalUnits || 0,
+        currentUnitTotal || 0,
+        this.getCurrentDiagnosticsUnitTotal(),
+        1
+      );
+      const optimized = Math.max(job.currentOptimized || 0, currentOptimized || 0);
+      const progress = clampProgress((optimized / totalUnits) * 90, 0, 90);
+      const nextProgress = Math.max(job.lastProgress || 0, progress);
+
+      job.totalUnits = totalUnits;
+      job.currentOptimized = optimized;
+      job.lastProgress = nextProgress;
+
+      this.diagnostics.setActivityState({
+        overlayJobId: job.id,
+        overlayStage: stage,
+        overlayProgress: nextProgress,
+      });
+    },
+
+    finishOptimizationOverlayJob(job, currentOptimized = 0, currentUnitTotal = 0) {
+      if (!job || job.completed) {
+        return;
+      }
+
+      const schedulerState = this.state.scheduler;
+
+      this.updateOptimizationOverlayJob(
+        job,
+        currentOptimized,
+        currentUnitTotal,
+        "settleState"
+      );
+      job.lastProgress = Math.max(job.lastProgress || 0, 90);
+      job.completed = true;
+      this.clearOverlayCompletionTimer();
+      this.diagnostics.setActivityState({
+        overlayJobId: job.id,
+        overlayStage: "settleState",
+        overlayProgress: job.lastProgress,
+      });
+
+      schedulerState.overlayCompletionTimer = globalThis.setTimeout(() => {
+        if (schedulerState.activeOverlayJob?.id !== job.id) {
+          schedulerState.overlayCompletionTimer = 0;
+          return;
+        }
+
+        this.diagnostics.setActivityState({
+          overlayJobId: job.id,
+          overlayStage: "settleState",
+          overlayProgress: 100,
+        });
+
+        schedulerState.overlayCompletionTimer = globalThis.setTimeout(() => {
+          schedulerState.overlayCompletionTimer = 0;
+          this.clearOptimizationOverlayJob(job);
+        }, 100);
+      }, 100);
+    },
+
+    clearOptimizationOverlayJob(job = null) {
+      const schedulerState = this.state.scheduler;
+
+      if (
+        job &&
+        schedulerState.activeOverlayJob?.id &&
+        schedulerState.activeOverlayJob.id !== job.id
+      ) {
+        return;
+      }
+
+      this.clearOverlayCompletionTimer();
+      schedulerState.activeOverlayJob = null;
+      this.diagnostics.setActivityState({
+        overlayVisible: false,
+        overlayJobId: "",
+        overlayKind: "",
+        overlayStage: "",
+        overlayProgress: 0,
+      });
     },
 
     getPanelActivityPhase(reason) {
@@ -90,16 +318,17 @@
         schedulerState.scheduledReason = reason;
       }
 
-      schedulerState.scheduledResync = schedulerState.scheduledResync || isResync;
-      this.syncPanelActivityState(reason);
-
       if (schedulerState.syncScheduled) {
+        schedulerState.scheduledResync = schedulerState.scheduledResync || isResync;
+        this.syncPanelActivityState(reason);
         return;
       }
 
       schedulerState.syncScheduled = true;
+      schedulerState.scheduledResync = schedulerState.scheduledResync || isResync;
+      this.syncPanelActivityState(reason);
 
-      globalThis.requestAnimationFrame(() => {
+      scheduleAfterNextPaint(() => {
         schedulerState.syncScheduled = false;
         const nextReason = schedulerState.scheduledReason;
         const nextResync = schedulerState.scheduledResync;
@@ -229,7 +458,7 @@
       );
     },
 
-    runSync(reason, isResync) {
+    async runSync(reason, isResync) {
       const schedulerState = this.state.scheduler;
       const runtimeState = this.state.runtime;
 
@@ -243,21 +472,26 @@
       this.syncPanelActivityState(reason);
       const startedAt = performance.now();
 
-        this.recordTraceEntry(
-          "sync",
-          "start",
-          {
-            reason,
-            isResync,
-            routeKey: this.getRouteKey(),
-            level: runtimeState.level,
-            effectiveMode: runtimeState.effectiveMode,
-          },
-          { includeSnapshot: true }
-        );
+      this.recordTraceEntry(
+        "sync",
+        "start",
+        {
+          reason,
+          isResync,
+          routeHash:
+            this.traceRecorder &&
+            typeof this.traceRecorder.buildRouteSummary === "function"
+              ? this.traceRecorder.buildRouteSummary(globalThis.location).routeHash
+              : "",
+          activeAdapter: this.state.page.activeAdapterId || "",
+          level: runtimeState.level,
+          effectiveMode: runtimeState.effectiveMode,
+        },
+        { includeSnapshot: true }
+      );
 
       try {
-        this.sync(reason, isResync);
+        await this.sync(reason, isResync);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         logger.error(t("logs.syncFailed"), error);
@@ -279,6 +513,8 @@
             reason,
             isResync,
             durationMs: Math.round(durationMs * 100) / 100,
+            recordCount: this.registry ? this.registry.getOrderedRecords().length : 0,
+            activeAdapter: this.state.page.activeAdapterId || "",
             level: runtimeState.level,
             effectiveMode: runtimeState.effectiveMode,
           },

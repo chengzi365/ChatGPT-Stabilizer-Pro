@@ -14,10 +14,42 @@
     };
   }
 
+  function createPanelBadgeSnapshot(state) {
+    return {
+      runtimeStatus: state.runtimeStatus,
+      level: state.level,
+      effectiveMode: state.effectiveMode,
+      messageTotal: state.metrics.messageTotal,
+      unitTotal: state.metrics.unitTotal,
+      optimized: state.metrics.optimized,
+      coverageRate: state.metrics.coverageRate,
+    };
+  }
+
+  function createPanelOverlaySnapshot(state) {
+    return {
+      overlayVisible: Boolean(state.activity.overlayVisible),
+      overlayJobId: state.activity.overlayJobId || "",
+      overlayKind: state.activity.overlayKind || "",
+      overlayStage: state.activity.overlayStage || "",
+      overlayProgress: state.activity.overlayProgress || 0,
+    };
+  }
+
+  function createTraceStatusSnapshot(state) {
+    return {
+      recording: Boolean(state.trace.recording),
+      entryCount: state.trace.entryCount || 0,
+      entryLimit: state.trace.entryLimit || 0,
+      entryLimitReached: Boolean(state.trace.entryLimitReached),
+      stopReason: state.trace.stopReason || "",
+      lastUpdatedAt: state.trace.lastUpdatedAt || 0,
+    };
+  }
+
   function createDiagnosticsState() {
     const modeCatalog = createModeCatalogSnapshot();
-
-    return {
+    const state = {
       level: config.defaultLevel,
       targetMode: config.defaultLevel,
       effectiveMode: config.defaultLevel,
@@ -101,6 +133,11 @@
         phase: "idle",
         reason: "",
         lowPriority: false,
+        overlayVisible: false,
+        overlayJobId: "",
+        overlayKind: "",
+        overlayStage: "",
+        overlayProgress: 0,
       },
       session: {
         activeAnomalyReason: "",
@@ -123,6 +160,10 @@
         : {
             recording: false,
             entryCount: 0,
+            entryLimit: 0,
+            captureLimit: 0,
+            entryLimitReached: false,
+            stopReason: "",
             domEventCount: 0,
             mutationBatchCount: 0,
             snapshotCount: 0,
@@ -132,9 +173,16 @@
             lastUpdatedAt: 0,
             lastKind: "",
             lastType: "",
+            traceSessionId: "",
           },
       events: [],
     };
+
+    state.panelBadge = createPanelBadgeSnapshot(state);
+    state.panelOverlay = createPanelOverlaySnapshot(state);
+    state.traceStatus = createTraceStatusSnapshot(state);
+
+    return state;
   }
 
   function cloneModeState(state) {
@@ -169,6 +217,18 @@
         return {
           ...state.page,
         };
+      case "panelBadge":
+        return {
+          ...state.panelBadge,
+        };
+      case "panelOverlay":
+        return {
+          ...state.panelOverlay,
+        };
+      case "traceStatus":
+        return {
+          ...state.traceStatus,
+        };
       case "capabilities":
         return {
           ...state.capabilities,
@@ -202,6 +262,9 @@
 
   app.core.diagnosticsState = Object.freeze({
     createDiagnosticsState,
+    createPanelBadgeSnapshot,
+    createPanelOverlaySnapshot,
+    createTraceStatusSnapshot,
     cloneDiagnosticsSlice,
   });
 })();

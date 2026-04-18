@@ -1,10 +1,10 @@
 (() => {
   const app = globalThis.__CSP__;
   const config = app.core.config;
-  const TAB_IDS = app.ui.panelTabIds;
   const PANEL_SECTION_IDS = [
     "badge",
     "summary",
+    "debugBanner",
     "stats",
     "tabs",
     "actions",
@@ -20,15 +20,16 @@
     "events",
   ];
   const SLICE_SECTION_MAP = Object.freeze({
-    runtimeStatus: ["badge", "summary", "overlay", "runtime"],
+    panelBadge: ["badge"],
+    panelOverlay: ["overlay"],
+    traceStatus: ["badge", "debugBanner"],
+    runtimeStatus: ["summary", "runtime"],
     modeState: ["summary", "runtime", "modes", "actions", "performance"],
-    page: ["overlay", "runtime"],
+    page: ["runtime"],
     capabilities: ["fallback"],
     metrics: [
-      "badge",
       "summary",
       "stats",
-      "overlay",
       "messageSummary",
       "messages",
       "impact",
@@ -36,7 +37,6 @@
       "fallback",
     ],
     fallback: ["fallback"],
-    activity: ["overlay"],
     session: ["runtime", "fallback"],
     trace: ["trace"],
     events: ["events"],
@@ -157,6 +157,11 @@
     },
 
     handleDiagnosticsSlice(sliceName, sliceState) {
+      const previousTraceStatus = this.state.traceStatus || this.state.trace || {};
+      const previousTraceRecording = Boolean(previousTraceStatus.recording);
+      const previousTraceLimitReached = Boolean(
+        previousTraceStatus.entryLimitReached && !previousTraceStatus.recording
+      );
       this.applyDiagnosticsSliceState(sliceName, sliceState);
       this.markDirtyForDiagnosticsSlice(sliceName);
 
@@ -169,8 +174,32 @@
         return;
       }
 
-      if (sliceName === "activity" || sliceName === "runtimeStatus") {
+      if (sliceName === "panelOverlay" || sliceName === "runtimeStatus") {
         this.queueImmediateRender();
+        return;
+      }
+
+      if (sliceName === "traceStatus") {
+        const nextTraceStatus = this.state.traceStatus || {};
+        const nextTraceRecording = Boolean(nextTraceStatus.recording);
+        const nextTraceLimitReached = Boolean(
+          nextTraceStatus.entryLimitReached && !nextTraceStatus.recording
+        );
+
+        if (
+          previousTraceRecording !== nextTraceRecording ||
+          previousTraceLimitReached !== nextTraceLimitReached
+        ) {
+          this.queueImmediateRender();
+          return;
+        }
+
+        if (!this.isOpen || this.activeTab !== "events") {
+          return;
+        }
+      }
+
+      if (sliceName === "trace" && (!this.isOpen || this.activeTab !== "events")) {
         return;
       }
 
@@ -187,14 +216,16 @@
         return [];
       }
 
-      const slices = new Set(["runtimeStatus", "metrics"]);
+      const slices = new Set(["panelBadge", "traceStatus"]);
 
       if (!this.isOpen) {
         return Array.from(slices);
       }
 
+      slices.add("runtimeStatus");
       slices.add("modeState");
-      slices.add("activity");
+      slices.add("metrics");
+      slices.add("panelOverlay");
 
       if (this.activeTab === "overview") {
         slices.add("page");

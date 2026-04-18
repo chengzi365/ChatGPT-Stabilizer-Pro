@@ -14,6 +14,8 @@
       this.modeStyleController = new app.style.ModeStyleController();
       this.diagnostics = app.core.createDiagnosticsStore();
       this.panel = new app.ui.ControlPanel(this.diagnostics);
+      this.traceRecorder = null;
+      this.traceRecorderInitialized = false;
       this.state = app.runtime.createControllerState({
         targetMode: initialMode.id,
         effectiveMode: initialMode.id,
@@ -43,7 +45,11 @@
       this.refreshRuntimeProfile("startup", { force: true });
       this.syncModeStateToDiagnostics();
       this.syncSessionStateToDiagnostics();
-      this.initTraceRecorder();
+
+      if (this.shouldInitTraceRecorder()) {
+        this.initTraceRecorder();
+      }
+
       this.diagnostics.setCapabilities(this.state.runtime.capabilities);
       this.panel.mount();
       this.installRouteWatchers();
@@ -129,6 +135,16 @@
         return;
       }
 
+      const traceRecordingChange = changes[config.storageKeys.traceRecording];
+
+      if (
+        traceRecordingChange &&
+        !this.traceRecorder &&
+        Boolean(traceRecordingChange.newValue)
+      ) {
+        this.initTraceRecorder();
+      }
+
       const levelChange = changes[config.storageKeys.level];
       const nextStoredLevel =
         typeof levelChange?.newValue === "string" ? levelChange.newValue : "";
@@ -157,24 +173,7 @@
     }
   }
 
-  Object.assign(
-    Controller.prototype,
-    app.dom.routeControllerMethods,
-    app.dom.pageAdapterControllerMethods,
-    app.dom.interactionControllerMethods,
-    app.runtime.commonEngineControllerMethods,
-    app.runtime.runtimeProfileControllerMethods,
-    app.runtime.modeRunnerMethods,
-    app.runtime.metricsControllerMethods,
-    app.runtime.traceControllerMethods,
-    app.runtime.degradeControllerMethods,
-    app.runtime.recoveryControllerMethods,
-    app.runtime.protectionControllerMethods,
-    app.runtime.syncControllerMethods,
-    app.runtime.syncPipelineControllerMethods,
-    app.dom.observerControllerMethods,
-    app.dom.measurementControllerMethods
-  );
+  app.runtime.installControllerModules(Controller);
 
   app.runtime.Controller = Controller;
 })();
